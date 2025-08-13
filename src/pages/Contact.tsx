@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Mail, Clock, MessageCircle, Send } from "lucide-react";
+import { Mail, Clock, MessageCircle, Send, HelpCircle, Shield, Users } from "lucide-react";
 import Layout from "@/components/Layout";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ const Contact = () => {
     email: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -22,23 +25,56 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This would normally send the message
-    console.log("Contact form submitted:", formData);
-    // Reset form
-    setFormData({ name: "", email: "", message: "" });
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate form submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Log the form data
+      console.log("Contact form submitted:", formData);
+      
+      // Show success message
+      toast({
+        title: "Message Sent Successfully!",
+        description: "We'll get back to you within 24 hours.",
+      });
+      
+      // Reset form
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      toast({
+        title: "Error Sending Message",
+        description: "Please try again or contact us directly via email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-charcoal to-charcoal-light text-white py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="font-heading font-bold text-5xl md:text-6xl mb-6">
+      <section className="bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 text-white py-20 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 right-20 w-32 h-32 bg-blue-400/20 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-24 h-24 bg-purple-400/20 rounded-full animate-bounce"></div>
+          <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-blue-300/30 rounded-full animate-ping"></div>
+        </div>
+        
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white px-6 py-3 rounded-full text-sm font-semibold mb-8 shadow-lg">
+            <MessageCircle className="w-4 h-4" />
+            Get in Touch
+          </div>
+          <h1 className="font-bold text-5xl md:text-6xl mb-8 leading-tight">
             We'd love to hear from you
           </h1>
-          <p className="font-body text-xl md:text-2xl text-white/80">
+          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
             Have questions? Need help? Just want to say hello? Get in touch!
           </p>
         </div>
@@ -62,12 +98,12 @@ const Contact = () => {
                 <CardHeader className="pb-6">
                   <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg mb-4">
                     <MessageCircle className="w-4 h-4" />
-                    Get in Touch
+                    Send a Message
                   </div>
                   <h2 className="font-bold text-3xl text-gray-900 mb-4">
-                    Send us a
+                    Tell us how we can
                     <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      message
+                      {" "}help you
                     </span>
                   </h2>
                   <p className="text-gray-600 text-lg">
@@ -78,7 +114,7 @@ const Contact = () => {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-3">
                       <Label htmlFor="name" className="font-semibold text-gray-900">
-                        Your Name
+                        Your Name *
                       </Label>
                       <Input
                         id="name"
@@ -88,13 +124,13 @@ const Contact = () => {
                         value={formData.name}
                         onChange={handleInputChange}
                         className="h-14 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 rounded-xl text-lg transition-all duration-300"
-                        placeholder="Enter your name"
+                        placeholder="Enter your full name"
                       />
                     </div>
                     
                     <div className="space-y-3">
                       <Label htmlFor="email" className="font-semibold text-gray-900">
-                        Email Address
+                        Email Address *
                       </Label>
                       <Input
                         id="email"
@@ -104,13 +140,13 @@ const Contact = () => {
                         value={formData.email}
                         onChange={handleInputChange}
                         className="h-14 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 rounded-xl text-lg transition-all duration-300"
-                        placeholder="Enter your email"
+                        placeholder="Enter your email address"
                       />
                     </div>
                     
                     <div className="space-y-3">
                       <Label htmlFor="message" className="font-semibold text-gray-900">
-                        Message
+                        Message *
                       </Label>
                       <Textarea
                         id="message"
@@ -126,10 +162,20 @@ const Contact = () => {
                     <Button 
                       type="submit" 
                       size="lg" 
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      disabled={isSubmitting}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Send className="mr-2 w-5 h-5" />
-                      Send Message
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 w-5 h-5" />
+                          Send Message
+                        </>
+                      )}
                     </Button>
                   </form>
                 </CardContent>
@@ -140,13 +186,13 @@ const Contact = () => {
             <div className="space-y-8">
               <div>
                 <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg mb-4">
-                  <MessageCircle className="w-4 h-4" />
+                  <HelpCircle className="w-4 h-4" />
                   We're Here to Help
                 </div>
                 <h2 className="font-bold text-4xl text-gray-900 mb-6">
                   Have
                   <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                    questions?
+                    {" "}questions?
                   </span>
                 </h2>
                 <p className="text-xl text-gray-600 mb-8">
@@ -169,10 +215,10 @@ const Contact = () => {
                           Drop us a line anytime at:
                         </p>
                         <a
-                          href="mailto:hello@finsuite.com"
+                          href="mailto:support@centrabudget.com"
                           className="font-semibold text-blue-600 hover:text-blue-700 text-lg transition-colors"
                         >
-                          hello@finsuite.com
+                          support@centrabudget.com
                         </a>
                       </div>
                     </div>
@@ -201,14 +247,14 @@ const Contact = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <MessageCircle className="w-6 h-6 text-purple-600" />
+                        <Shield className="w-6 h-6 text-purple-600" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-xl text-gray-900 mb-2">
-                          What to expect
+                          Security & Privacy
                         </h3>
                         <p className="text-gray-600">
-                          Our support team is friendly, knowledgeable, and genuinely cares about helping you succeed with your budgeting goals.
+                          Your data is protected with bank-level encryption. We never share your personal information with third parties.
                         </p>
                       </div>
                     </div>
@@ -216,15 +262,21 @@ const Contact = () => {
                 </Card>
               </div>
 
-              <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl p-6">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
                 <div className="text-center">
-                  <h3 className="font-heading font-bold text-2xl text-foreground mb-2">
+                  <h3 className="font-bold text-2xl text-gray-900 mb-2">
                     Need help getting started?
                   </h3>
-                  <p className="font-body text-muted-foreground mb-4">
-                    Check out our quick start guide and tutorials to get the most out of FinSuite.
+                  <p className="text-gray-600 mb-4">
+                    Check out our help center and tutorials to get the most out of CentraBudget.
                   </p>
-                  <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white">
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300"
+                    onClick={() => window.location.href = '/help'}
+                  >
+                    <HelpCircle className="w-4 h-4 mr-2" />
                     View Help Center
                   </Button>
                 </div>
@@ -235,54 +287,54 @@ const Contact = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="font-heading font-bold text-3xl md:text-4xl text-foreground mb-4">
+            <h2 className="font-bold text-3xl md:text-4xl text-gray-900 mb-4">
               Common Questions
             </h2>
-            <p className="font-body text-lg text-muted-foreground">
+            <p className="text-lg text-gray-600">
               Quick answers to questions you might have.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="border-2 border-transparent hover:border-primary/20 transition-colors">
+            <Card className="border-2 border-transparent hover:border-blue-200 transition-colors hover:shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-heading font-semibold text-xl text-foreground mb-3">
+                <h3 className="font-semibold text-xl text-gray-900 mb-3">
                   How do I reset my password?
                 </h3>
-                <p className="font-body text-muted-foreground">
-                  Use the "Forgot Password" link on the login page, and we'll send you reset instructions.
+                <p className="text-gray-600">
+                  Use the "Forgot Password" link on the login page, and we'll send you reset instructions via email.
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-2 border-transparent hover:border-primary/20 transition-colors">
+            <Card className="border-2 border-transparent hover:border-blue-200 transition-colors hover:shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-heading font-semibold text-xl text-foreground mb-3">
+                <h3 className="font-semibold text-xl text-gray-900 mb-3">
                   Can I import data from other apps?
                 </h3>
-                <p className="font-body text-muted-foreground">
-                  Currently, FinSuite focuses on manual entry for maximum accuracy and awareness of your spending.
+                <p className="text-gray-600">
+                  Currently, CentraBudget focuses on manual entry for maximum accuracy and awareness of your spending patterns.
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-2 border-transparent hover:border-primary/20 transition-colors">
+            <Card className="border-2 border-transparent hover:border-blue-200 transition-colors hover:shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-heading font-semibold text-xl text-foreground mb-3">
+                <h3 className="font-semibold text-xl text-gray-900 mb-3">
                   Is my financial data secure?
                 </h3>
-                <p className="font-body text-muted-foreground">
-                  Yes! We use bank-level encryption and never store sensitive financial account information.
+                <p className="text-gray-600">
+                  Yes! We use bank-level encryption and never store sensitive financial account information. Your privacy is our top priority.
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-2 border-transparent hover:border-primary/20 transition-colors">
+            <Card className="border-2 border-transparent hover:border-blue-200 transition-colors hover:shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-heading font-semibold text-xl text-foreground mb-3">
+                <h3 className="font-semibold text-xl text-gray-900 mb-3">
                   Do you offer business accounts?
                 </h3>
-                <p className="font-body text-muted-foreground">
-                  FinSuite is designed for personal budgeting. We're exploring business features for the future.
+                <p className="text-gray-600">
+                  CentraBudget is designed for personal budgeting. We're exploring business features for the future.
                 </p>
               </CardContent>
             </Card>

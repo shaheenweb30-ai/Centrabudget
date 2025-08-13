@@ -9,6 +9,7 @@ export default {
 		"./src/**/*.{ts,tsx}",
 	],
 	prefix: "",
+	plugins: [require("@tailwindcss/typography")],
 	theme: {
 		container: {
 			center: true,

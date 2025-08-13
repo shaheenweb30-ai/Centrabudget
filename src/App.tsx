@@ -20,6 +20,7 @@ import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 
 import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Settings from "./pages/Settings";
@@ -30,6 +31,10 @@ import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
+import Security from "./pages/Security";
+import Cookies from "./pages/Cookies";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 
@@ -163,6 +168,7 @@ const AppContent = () => {
                   <Route path="/pricing" element={<Pricing />} />
 
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/careers" element={<Careers />} />
                   
                   {/* Authentication Routes */}
                   <Route path="/login" element={<Login />} />
@@ -229,6 +235,10 @@ const AppContent = () => {
                   <Route path="/privacy" element={<Privacy />} />
                    <Route path="/terms" element={<Terms />} />
                    <Route path="/refund-policy" element={<RefundPolicy />} />
+                   <Route path="/security" element={<Security />} />
+                   <Route path="/cookies" element={<Cookies />} />
+                   <Route path="/blog" element={<Blog />} />
+                   <Route path="/blog/:slug" element={<BlogPost />} />
                    
                    {/* Debug Route */}
                    <Route path="/button-test" element={<ButtonTest />} />

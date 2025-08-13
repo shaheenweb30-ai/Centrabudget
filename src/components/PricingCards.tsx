@@ -24,6 +24,28 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   const { isFreePlan, limits } = useUserPlan();
   const { plans: pricingPlans } = usePricing();
   const { formatCurrency } = useSettings();
+  
+  // Force USD formatting for pricing cards
+  const formatUSD = (amount: number): string => {
+    const absAmount = Math.abs(amount);
+    const sign = amount >= 0 ? '' : '-';
+    
+    try {
+      // Force USD formatting regardless of user preferences
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      return `${sign}${formatter.format(absAmount)}`;
+    } catch (error) {
+      // Fallback to simple USD formatting
+      return `${sign}$${absAmount.toFixed(2)}`;
+    }
+  };
+  
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   // Transform pricing plans to match the expected format
@@ -132,7 +154,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
                 <div className="flex items-baseline justify-center">
                   {plan.price !== null ? (
                     <>
-                      <span className="text-4xl font-bold text-slate-900">{formatCurrency(plan.price)}</span>
+                      <span className="text-4xl font-bold text-slate-900">{formatUSD(plan.price)}</span>
                       <span className="text-lg text-slate-500 ml-1">/{plan.period}</span>
                     </>
                   ) : (
@@ -141,7 +163,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
                 </div>
                 {billingCycle === 'yearly' && plan.name === 'Pro' && plan.price !== null && (
                   <p className="text-sm text-green-600 mt-1">
-                    Save {formatCurrency((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12) - plan.price)}/year
+                    Save {formatUSD((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12) - plan.price)}/year
                   </p>
                 )}
               </div>

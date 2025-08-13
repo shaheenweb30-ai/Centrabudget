@@ -79,6 +79,7 @@ const Header: React.FC = () => {
   const navigation = [
     { name: t('common.home'), href: "/" },
     { name: t('common.features'), href: "/features" },
+    { name: "Blog", href: "/blog" },
     { name: t('common.pricing'), href: "/pricing" },
     { name: t('common.contact'), href: "#contact" },
   ];

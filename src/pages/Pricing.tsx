@@ -16,6 +16,27 @@ const Pricing: React.FC = () => {
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
   const { formatCurrency } = useSettings();
+  
+  // Force USD formatting for pricing page
+  const formatUSD = (amount: number): string => {
+    const absAmount = Math.abs(amount);
+    const sign = amount >= 0 ? '' : '-';
+    
+    try {
+      // Force USD formatting regardless of user preferences
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      return `${sign}${formatter.format(absAmount)}`;
+    } catch (error) {
+      // Fallback to simple USD formatting
+      return `${sign}$${absAmount.toFixed(2)}`;
+    }
+  };
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedFeatures, setExpandedFeatures] = useState<string[]>([]);
 
@@ -132,45 +153,42 @@ const Pricing: React.FC = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/20 dark:to-purple-950/20">
         {/* Hero Section */}
-        <section className="relative py-16 bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30 overflow-hidden">
-          {/* Background decorative elements */}
+        <section className="bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 text-white py-20 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute top-10 right-20 w-32 h-32 bg-blue-200 rounded-full opacity-10 animate-pulse"></div>
-            <div className="absolute bottom-10 left-20 w-24 h-24 bg-indigo-200 rounded-full opacity-15 animate-bounce"></div>
-            <div className="absolute top-1/3 right-1/4 w-20 h-20 bg-purple-200 rounded-full opacity-20 animate-ping"></div>
-            <div className="absolute bottom-1/3 left-1/3 w-16 h-16 bg-green-200 rounded-full opacity-10 animate-pulse"></div>
+            <div className="absolute top-20 right-20 w-32 h-32 bg-blue-400/20 rounded-full animate-pulse"></div>
+            <div className="absolute bottom-20 left-20 w-24 h-24 bg-purple-400/20 rounded-full animate-bounce"></div>
           </div>
-
+          
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             {/* Badge */}
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white rounded-full text-sm font-medium shadow-lg mb-6">
-              <span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white px-6 py-3 rounded-full text-sm font-semibold mb-8 shadow-lg">
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
               Simple & Transparent Pricing
             </div>
             
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+            <h1 className="font-bold text-5xl md:text-6xl mb-8 leading-tight">
               Choose Your
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
                 {" "}Plan
               </span>
             </h1>
             
-            <p className="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto mb-10">
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed">
               Start free, upgrade when you need more. Everyone starts with our free plan and can upgrade to Pro when they need advanced features.
             </p>
             
             {/* Enhanced Billing Toggle */}
             <div className="flex items-center justify-center gap-6 mb-12">
-              <span className={`text-base font-medium transition-colors duration-300 ${billingCycle === 'monthly' ? 'text-gray-900' : 'text-gray-500'}`}>
+              <span className={`text-base font-medium transition-colors duration-300 ${billingCycle === 'monthly' ? 'text-white' : 'text-white/70'}`}>
                 Monthly
               </span>
               <div className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                 <button
                   onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-                  className="relative inline-flex h-7 w-14 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 group-hover:bg-white"
+                  className="relative inline-flex h-7 w-14 items-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 group-hover:bg-white/30"
                 >
                   <span
                     className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 shadow-lg ${
@@ -179,10 +197,10 @@ const Pricing: React.FC = () => {
                   />
                 </button>
               </div>
-              <span className={`text-base font-medium transition-colors duration-300 ${billingCycle === 'yearly' ? 'text-gray-900' : 'text-gray-500'}`}>
+              <span className={`text-base font-medium transition-colors duration-300 ${billingCycle === 'yearly' ? 'text-white' : 'text-white/70'}`}>
                 Yearly
-                <span className="ml-2 inline-flex items-center px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-medium rounded-full border border-green-200 shadow-sm">
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                <span className="ml-2 inline-flex items-center px-2 py-1 bg-gradient-to-r from-green-400/20 to-emerald-400/20 text-green-300 text-xs font-medium rounded-full border border-green-400/30 shadow-sm backdrop-blur-sm">
+                  <span className="w-1 h-1 bg-green-400 rounded-full mr-1 animate-pulse"></span>
                   Save 17%
                 </span>
               </span>
@@ -190,15 +208,15 @@ const Pricing: React.FC = () => {
             
             {/* Billing cycle info */}
             <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-white/80">
                 {billingCycle === 'yearly' ? (
                   <span className="inline-flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                     Yearly plans are one-time payments
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-2">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span className="w-2 h-2 bg-white/60 rounded-full"></span>
                     Monthly plans are billed monthly
                   </span>
                 )}
@@ -208,7 +226,7 @@ const Pricing: React.FC = () => {
         </section>
 
         {/* Pricing Cards - Compact & Appropriate */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 via-white to-blue-50/20 relative overflow-hidden">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-white via-gray-50 to-blue-50/30 relative overflow-hidden">
           {/* Background decorative elements */}
           <div className="absolute inset-0">
             <div className="absolute top-20 right-20 w-24 h-24 bg-blue-200 rounded-full opacity-15 animate-pulse"></div>
@@ -253,14 +271,14 @@ const Pricing: React.FC = () => {
                       
                       <div className="mt-6">
                         <div className="flex items-baseline justify-center">
-                                          {plan.price !== null ? (
-                  <>
-                    <span className="text-4xl font-bold text-gray-900">{formatCurrency(plan.price)}</span>
-                    <span className="text-lg text-gray-500 ml-2">/{plan.period}</span>
-                  </>
-                ) : (
-                  <span className="text-2xl font-bold text-gray-900">{plan.period}</span>
-                )}
+                          {plan.price !== null ? (
+                            <>
+                              <span className="text-4xl font-bold text-gray-900">{formatUSD(plan.price)}</span>
+                              <span className="text-lg text-gray-500 ml-2">/{plan.period}</span>
+                            </>
+                          ) : (
+                            <span className="text-2xl font-bold text-gray-900">{plan.period}</span>
+                          )}
                         </div>
                         {billingCycle === 'yearly' && plan.name === 'Pro' && (
                           <div className="mt-2 space-y-2">

@@ -3,20 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Shield, 
-  FileText, 
-  Users, 
-  CreditCard, 
+  Lock, 
+  Eye, 
+  Database, 
+  Key, 
   RefreshCw, 
   AlertTriangle, 
   Mail, 
   ExternalLink,
   CheckCircle,
   Clock,
-  Lock
+  Server,
+  Globe,
+  Users,
+  Settings,
+  Zap
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const Terms = () => {
+const Security = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/20 dark:to-purple-950/20 py-12 px-4">
@@ -24,7 +29,7 @@ const Terms = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-800 to-purple-800 dark:from-slate-100 dark:via-blue-200 dark:to-purple-200 mb-4">
-              Terms of Service
+              Security
             </h1>
             <p className="text-lg text-slate-600 dark:text-slate-400">
               Last updated: {new Date().toLocaleDateString('en-US', { 
@@ -42,154 +47,165 @@ const Terms = () => {
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
                   <Shield className="w-6 h-6 text-blue-600" />
-                  Our Commitment to You
+                  Your Security is Our Priority
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                  Welcome to CentraBudget. By accessing or using our services, you agree to be bound by these
-                  Terms of Service. If you do not agree to these terms, please do not use the service.
+                  At CentraBudget, we implement industry-leading security measures to protect your financial data and personal information. Our multi-layered approach ensures your data remains secure at every level.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Use of Service Section */}
+            {/* Data Encryption Section */}
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                  <Users className="w-6 h-6 text-green-600" />
-                  Use of the Service
+                  <Lock className="w-6 h-6 text-green-600" />
+                  Data Encryption
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-                  You agree to use the service only for lawful purposes and in accordance with these terms. You are
-                  responsible for maintaining the confidentiality of your account credentials.
+                  All data is encrypted using enterprise-grade encryption standards to ensure maximum protection.
                 </p>
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <ul className="space-y-2 text-blue-700 dark:text-blue-300 text-sm">
+                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <ul className="space-y-2 text-green-700 dark:text-green-300 text-sm">
                     <li className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Use the service for lawful purposes only</span>
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>AES-256 encryption for data at rest</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Maintain account security and confidentiality</span>
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>TLS 1.3 encryption for data in transit</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Comply with all applicable laws and regulations</span>
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>End-to-end encryption for sensitive operations</span>
                     </li>
                   </ul>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Subscriptions Section */}
+            {/* Authentication & Access Control Section */}
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                  <CreditCard className="w-6 h-6 text-purple-600" />
-                  Subscriptions
+                  <Key className="w-6 h-6 text-purple-600" />
+                  Authentication & Access Control
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-                  We may offer paid subscriptions. Subscription access may be revoked if
-                  abuse is detected.
+                  Multi-factor authentication and strict access controls protect your account from unauthorized access.
                 </p>
                 <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                   <ul className="space-y-2 text-purple-700 dark:text-purple-300 text-sm">
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Access granted based on subscription tier</span>
+                      <span>Multi-factor authentication (MFA) support</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Automatic renewal unless cancelled</span>
+                      <span>Role-based access control (RBAC)</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Abuse detection may result in access revocation</span>
+                      <span>Session management and timeout controls</span>
                     </li>
                   </ul>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Refunds Section */}
+            {/* Infrastructure Security Section */}
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                  <RefreshCw className="w-6 h-6 text-green-600" />
-                  Refunds
+                  <Server className="w-6 h-6 text-blue-600" />
+                  Infrastructure Security
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-                  We partner with Paddle to process payments. Refunds are available within 14 days of purchase or renewal. 
-                  To request a refund, contact <span className="font-semibold text-blue-600 dark:text-blue-400">support@centrabudget.com</span> with your transaction details.
+              <CardContent>
+                <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
+                  Our infrastructure is built on secure, enterprise-grade cloud platforms with continuous monitoring and threat detection.
                 </p>
-                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Refund Information
-                  </h4>
-                  <p className="text-green-700 dark:text-green-300 text-sm mb-3">
-                    Our full <Link to="/refund-policy" className="underline font-semibold hover:text-green-800 dark:hover:text-green-200">Refund Policy</Link> is available at centrabudget.com/refund-policy.
-                  </p>
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
-                    <Clock className="w-4 h-4" />
-                    <span>14-day refund window for new purchases and renewals</span>
-                  </div>
+              </CardContent>
+            </Card>
+
+            {/* Data Privacy Section */}
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <Eye className="w-6 h-6 text-green-600" />
+                  Data Privacy
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
+                  We follow strict data privacy principles and never sell or share your personal information with third parties without your explicit consent.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Compliance & Auditing Section */}
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-blue-600" />
+                  Compliance & Auditing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+                  Regular security audits and compliance checks ensure we maintain the highest security standards.
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <ul className="space-y-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>Regular security assessments and penetration testing</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>GDPR and CCPA compliance</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>Continuous monitoring and incident response</span>
+                    </li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Privacy Section */}
-            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                  <Lock className="w-6 h-6 text-blue-600" />
-                  Privacy
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                  Your use of the service is also governed by our Privacy Policy. Please review it to understand how
-                  we collect, use, and safeguard your information.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Termination Section */}
+            {/* Incident Response Section */}
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-orange-600" />
-                  Termination
+                  Incident Response
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                  We reserve the right to suspend or terminate access to the service at our discretion, including for
-                  violations of these terms.
+                  Our security team is available 24/7 to respond to any security incidents and ensure rapid resolution with minimal impact.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Changes Section */}
+            {/* Security Updates Section */}
             <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-xl border-0 mb-8">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
                   <RefreshCw className="w-6 h-6 text-purple-600" />
-                  Changes
+                  Security Updates
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                  We may update these terms from time to time. Continued use of the service after changes constitutes
-                  acceptance of the revised terms.
+                  We continuously update our security measures and promptly apply patches to address any vulnerabilities.
                 </p>
               </CardContent>
             </Card>
@@ -199,12 +215,12 @@ const Terms = () => {
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
                   <Mail className="w-6 h-6 text-blue-600" />
-                  Contact
+                  Security Contact
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                  For questions about these Terms, please contact us via the Help page or the Contact page.
+                  For security-related questions or to report a security concern, contact us at <span className="font-semibold text-blue-600 dark:text-blue-400">security@centrabudget.com</span>.
                 </p>
               </CardContent>
             </Card>
@@ -238,6 +254,4 @@ const Terms = () => {
   );
 };
 
-export default Terms;
-
-
+export default Security;
