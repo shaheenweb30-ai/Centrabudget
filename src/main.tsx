@@ -13,23 +13,23 @@ if (typeof window !== 'undefined') {
     if (window.vitals) {
       // @ts-ignore
       window.vitals('CLS', (metric: any) => {
-        console.log('CLS:', metric)
+        // CLS metric logged
       })
       // @ts-ignore
       window.vitals('FID', (metric: any) => {
-        console.log('FID:', metric)
+        // FID metric logged
       })
       // @ts-ignore
       window.vitals('FCP', (metric: any) => {
-        console.log('FCP:', metric)
+        // FCP metric logged
       })
       // @ts-ignore
       window.vitals('LCP', (metric: any) => {
-        console.log('LCP:', metric)
+        // LCP metric logged
       })
       // @ts-ignore
       window.vitals('TTFB', (metric: any) => {
-        console.log('TTFB:', metric)
+        // TTFB metric logged
       })
     }
   }

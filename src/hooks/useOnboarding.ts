@@ -20,15 +20,26 @@ export const useOnboarding = (): OnboardingState => {
       const newUserFlag = localStorage.getItem('centrabudget_newUser') === 'true';
       const welcomeShownFlag = localStorage.getItem('centrabudget_welcomeShown') === 'true';
       
-      setIsNewUser(newUserFlag);
+      // If no onboarding state exists, treat as new user
+      const isFirstTimeUser = localStorage.getItem('centrabudget_newUser') === null && 
+                             localStorage.getItem('centrabudget_welcomeShown') === null;
+      
+      setIsNewUser(newUserFlag || isFirstTimeUser);
       setWelcomeShown(welcomeShownFlag);
       
-      // Don't show welcome automatically - only show when explicitly requested
-      setShouldShowWelcome(false);
+      // Show welcome for new users who haven't seen it yet
+      // Also show for first-time users
+      setShouldShowWelcome((newUserFlag || isFirstTimeUser) && !welcomeShownFlag);
+      
+      // If this is a first-time user, set the flag
+      if (isFirstTimeUser) {
+        localStorage.setItem('centrabudget_newUser', 'true');
+      }
     } catch (error) {
       console.warn('Failed to read onboarding state from localStorage:', error);
-      // Default to not showing welcome if localStorage fails
-      setShouldShowWelcome(false);
+      // Default to showing welcome if localStorage fails
+      setShouldShowWelcome(true);
+      setIsNewUser(true);
     }
   }, []);
 

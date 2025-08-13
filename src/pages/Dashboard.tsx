@@ -448,11 +448,11 @@ const Dashboard = () => {
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Add transactions to see your spending patterns</p>
                     <Button 
                       onClick={() => navigate('/transactions')}
-                      variant="debug"
+                      variant="default"
                       className="rounded-full"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add Transaction (DEBUG)
+                      Add Transaction
                     </Button>
                   </div>
                 )}
@@ -518,12 +518,12 @@ const Dashboard = () => {
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Add your first transaction to get started</p>
                     <Button 
                       onClick={() => navigate('/transactions')}
-                      variant="debug"
+                      variant="default"
                       className="mt-3 rounded-full font-semibold px-6 py-3"
                       size="lg"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add First Transaction (DEBUG)
+                      Add First Transaction
                     </Button>
                   </div>
                 )}

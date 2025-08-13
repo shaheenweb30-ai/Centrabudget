@@ -24,7 +24,6 @@ const buttonVariants = cva(
         "brand-outline": "border-2 border-[#1752F3] bg-background text-[#1752F3] hover:bg-[#1752F3] hover:text-white",
         "brand-secondary": "bg-[#F0F0F0] text-[#1752F3] hover:bg-[#F0F0F0]/90 shadow-md hover:shadow-lg",
         "brand-accent": "bg-[#4A90E2] text-white hover:bg-[#4A90E2]/90 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5",
-        debug: "bg-red-500 text-white border-2 border-red-700 shadow-lg hover:bg-red-600",
       },
       size: {
         default: "h-12 px-6 py-3 text-base",

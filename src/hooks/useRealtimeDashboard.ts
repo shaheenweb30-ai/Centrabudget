@@ -338,7 +338,7 @@ export const useRealtimeDashboard = (startDate?: string, endDate?: string) => {
         const periodFactor = selectedPeriod === 'monthly' ? 1 : selectedPeriod === 'yearly' ? 12 : 4;
         fixedCostsTotal = fixedCostsTotalMonthly * periodFactor;
       } catch (error) {
-        console.warn('Dashboard: Error calculating fixed costs:', error);
+        // Error calculating fixed costs
       }
 
       const finalData = {
@@ -365,7 +365,7 @@ export const useRealtimeDashboard = (startDate?: string, endDate?: string) => {
       setDashboardData(finalData);
 
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // Error fetching dashboard data
     } finally {
       setLoading(false);
     }

@@ -53,20 +53,10 @@ const AdminUsers = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('AdminUsers: isAdmin =', isAdmin, 'user =', user);
-    
     if (!isAdmin) {
       toast.error('Access denied. Admin privileges required.');
       return;
     }
-
-    // Debug: Check current user's admin status
-    console.log('Current user admin check:', {
-      userId: user?.id,
-      userEmail: user?.email,
-      isAdmin,
-      timestamp: new Date().toISOString()
-    });
 
     fetchUsers();
   }, [isAdmin, user]);

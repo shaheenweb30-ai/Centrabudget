@@ -280,23 +280,19 @@ export const VerifyEmailPage = () => {
                 setErrorMessage('Please check your email and click the verification link.');
               }
             } else {
-              console.log('🔍 DEBUG: Unexpected sign-in response:', signInError);
               setVerificationStatus('pending');
               setErrorMessage('Please check your email and click the verification link.');
             }
           } catch (checkError) {
-            console.log('🔍 DEBUG: Could not check email status:', checkError);
             setVerificationStatus('pending');
             setErrorMessage('Please check your email and click the verification link.');
           }
         } else {
-          console.log('🔍 DEBUG: No email found in localStorage');
           setVerificationStatus('pending');
           setErrorMessage('Please check your email and click the verification link.');
         }
       }
     } catch (error) {
-      console.error('Manual verification failed:', error);
       setVerificationStatus('error');
       setErrorMessage('Verification check failed. Please try again.');
     } finally {

@@ -130,7 +130,6 @@ export const useDashboardData = (user: User | null, dateRange: string) => {
       });
 
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
       setData(prev => ({
         ...prev,
         loading: false,

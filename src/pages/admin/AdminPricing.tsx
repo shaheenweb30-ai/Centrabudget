@@ -143,17 +143,7 @@ const AdminPricing = () => {
                 <RefreshCw className="w-4 h-4" />
                 Refresh
               </Button>
-              <Button
-                onClick={() => {
-                  console.log('Current user:', user);
-                  console.log('User metadata:', user?.user_metadata);
-                  console.log('Is admin:', user?.user_metadata?.role === 'admin');
-                }}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                Debug User
-              </Button>
+
             </div>
           </div>
 

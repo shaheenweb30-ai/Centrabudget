@@ -67,12 +67,8 @@ export function DynamicHomepage() {
   const securityContent = getContentBySection('security');
 
   const handleButtonClick = (path: string) => {
-    // This function is not defined in the original file,
-    // but it's implied by the new_code.
-    // For now, we'll just log the path.
-    console.log(`Button clicked, navigating to: ${path}`);
-    // In a real application, you would use a router or window.location.href
-    // to navigate to the desired path.
+    // Navigate to the specified path
+    window.location.href = path;
   };
 
   return <Layout>

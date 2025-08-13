@@ -391,27 +391,7 @@ export function AdminEditButton({ sectionId, currentContent, contentType = 'home
                   <Upload className="w-4 h-4" />
                   {uploading ? 'Uploading...' : 'Upload Image'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    console.log('=== STORAGE DEBUG ===');
-                    const { data: { user } } = await supabase.auth.getUser();
-                    console.log('User:', user);
-                    
-                    const isAdmin = await checkAdminAccess();
-                    console.log('Is admin:', isAdmin);
-                    
-                    const storageAccess = await testStorageAccess();
-                    console.log('Storage access:', storageAccess);
-                    
-                    toast.info('Check console for debug info');
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  Debug
-                </Button>
+
                 {formData.image_url && (
                   <Button
                     type="button"

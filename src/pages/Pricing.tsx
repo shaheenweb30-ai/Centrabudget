@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Check, Star, Zap, Users, Shield, CreditCard, ArrowRight, ChevronDown, ChevronUp, Sparkles, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import Layout from '@/components/Layout';
 
 const Pricing: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
   const { formatCurrency } = useSettings();
@@ -99,9 +101,15 @@ const Pricing: React.FC = () => {
       description: description,
       price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? plan.yearlyPrice! : plan.monthlyPrice!),
       period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
-      buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
-      buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
-      disabled: plan.id === 'free' ? (user && isFreePlan) : false,
+      buttonText: plan.id === 'free' 
+        ? (user ? 'Go to Dashboard' : 'Get Started Free') 
+        : plan.id === 'pro' 
+        ? (user ? (isFreePlan ? 'Upgrade to Pro' : 'Go to Dashboard') : 'Get Pro') 
+        : plan.id === 'enterprise' 
+        ? (user ? 'Contact Sales' : 'Get Enterprise') 
+        : plan.buttonText,
+      buttonVariant: 'default', // We'll handle styling through className instead
+      disabled: plan.id === 'free' ? false : (plan.id === 'pro' && user && !isFreePlan),
       popular: plan.popular || false,
       features: features,
       icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
@@ -142,12 +150,35 @@ const Pricing: React.FC = () => {
   ];
 
   const handleUpgrade = (planName: string) => {
-    if (planName === 'Enterprise') {
-      // Open contact form or redirect to sales
-      window.location.href = 'mailto:sales@clearcents.com?subject=Enterprise%20Plan%20Inquiry';
+    if (planName === 'Free') {
+      if (user) {
+        // Logged in user on free plan - redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        // Not logged in - redirect to signup
+        navigate('/signup');
+      }
     } else if (planName === 'Pro') {
-      // TODO: Implement Stripe checkout
-      console.log('Upgrade to Pro');
+      if (user) {
+        if (isFreePlan) {
+          // Logged in user upgrading from free to pro - redirect to checkout
+          navigate('/checkout');
+        } else {
+          // Already on pro plan - redirect to dashboard
+          navigate('/dashboard');
+        }
+      } else {
+        // Not logged in - redirect to signup
+        navigate('/signup');
+      }
+    } else if (planName === 'Enterprise') {
+      if (user) {
+        // Logged in user - redirect to contact page for enterprise inquiry
+        navigate('/contact');
+      } else {
+        // Not logged in - redirect to signup
+        navigate('/signup');
+      }
     }
   };
 
@@ -239,15 +270,10 @@ const Pricing: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {plans.map((plan, index) => (
                 <div key={plan.name} className="group relative">
-                  {/* Glow effect for popular plan */}
-                  {plan.popular && (
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                  )}
+
                   
-                  <Card 
-                    className={`relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 overflow-hidden ${
-                      plan.popular ? 'scale-102' : ''
-                    }`}
+                                    <Card
+                    className="relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 overflow-hidden"
                   >
                     {plan.popular && (
                       <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white text-center py-2 text-sm font-semibold">
@@ -319,21 +345,34 @@ const Pricing: React.FC = () => {
                         onClick={() => handleUpgrade(plan.name)}
                         variant={plan.buttonVariant as any}
                         size="lg"
-                        className="w-full h-12 text-base font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                        className={`
+                          w-full h-14 text-base font-semibold rounded-2xl transition-all duration-300 
+                          hover:scale-105 shadow-lg hover:shadow-xl transform relative overflow-hidden
+                          ${plan.name === 'Free' 
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 hover:shadow-green-500/25 hover:shadow-2xl' 
+                            : plan.name === 'Pro' 
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 hover:shadow-blue-500/25 hover:shadow-2xl' 
+                            : plan.name === 'Enterprise' 
+                            ? 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white border-0 hover:shadow-purple-500/25 hover:shadow-2xl' 
+                            : ''
+                          }
+                          ${plan.disabled ? 'opacity-50 cursor-not-allowed hover:scale-100 bg-gray-400 hover:shadow-lg' : ''}
+                          before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/0 before:via-white/20 before:to-white/0 before:translate-x-[-100%] before:transition-transform before:duration-1000 hover:before:translate-x-[100%]
+                        `}
                         disabled={plan.disabled}
                       >
-                        {plan.buttonText}
-                        {!plan.disabled && <ArrowRight className="w-4 h-4 ml-2" />}
+                        <div className="flex items-center justify-center gap-2">
+                          {plan.name === 'Free' && <Star className="w-5 h-5" />}
+                          {plan.name === 'Pro' && <Zap className="w-5 h-5" />}
+                          {plan.name === 'Enterprise' && <Users className="w-5 h-5" />}
+                          <span>{plan.buttonText}</span>
+                          {!plan.disabled && <ArrowRight className="w-4 h-4 ml-1" />}
+                        </div>
                       </Button>
                       
-                      {plan.name === 'Free' && user && (
-                        <div className="mt-3 text-center">
-                          <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-medium rounded-full border border-green-200">
-                            <span className="w-1 h-1 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                            ✓ Your current plan
-                          </div>
-                        </div>
-                      )}
+
+                      
+
                     </CardFooter>
                   </Card>
                 </div>
@@ -502,14 +541,20 @@ const Pricing: React.FC = () => {
                   <div className="absolute -inset-1 bg-gradient-to-r from-white to-gray-100 rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                   <Button
                     onClick={() => {
-                      if (!user) {
-                        window.location.href = '/signup';
+                      if (user) {
+                        if (isFreePlan) {
+                          navigate('/checkout');
+                        } else {
+                          navigate('/dashboard');
+                        }
+                      } else {
+                        navigate('/signup');
                       }
                     }}
                     className="relative bg-white text-blue-600 hover:bg-gray-100 px-10 py-5 text-xl font-semibold rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-500 border-0 min-w-[200px]"
                   >
                     <div className="flex items-center justify-center space-x-3">
-                      <span>{user ? 'Upgrade to Pro' : 'Start Free Today'}</span>
+                      <span>{user ? (isFreePlan ? 'Upgrade to Pro' : 'Go to Dashboard') : 'Start Free Today'}</span>
                       <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
                     </div>
                   </Button>
@@ -519,7 +564,7 @@ const Pricing: React.FC = () => {
                   variant="outline"
                   size="lg"
                   className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-5 text-xl font-semibold rounded-3xl transition-all duration-300"
-                  onClick={() => window.location.href = '/contact'}
+                  onClick={() => navigate('/contact')}
                 >
                   Contact Sales
                 </Button>
