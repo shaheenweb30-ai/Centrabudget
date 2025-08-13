@@ -1,96 +1,90 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { robustLogout, forceLogout } from '@/lib/auth-utils';
 
-const ButtonTest = () => {
+export default function ButtonTest() {
+  const { user, signOut } = useAuth();
+
+  const handleTestLogout = async () => {
+    console.log('🧪 Testing logout functionality...');
+    try {
+      await signOut();
+      console.log('✅ AuthContext logout successful');
+    } catch (error) {
+      console.error('❌ AuthContext logout failed:', error);
+    }
+  };
+
+  const handleTestRobustLogout = async () => {
+    console.log('🧪 Testing robust logout...');
+    try {
+      await robustLogout();
+      console.log('✅ Robust logout successful');
+    } catch (error) {
+      console.error('❌ Robust logout failed:', error);
+    }
+  };
+
+  const handleTestForceLogout = () => {
+    console.log('🧪 Testing force logout...');
+    try {
+      forceLogout();
+      console.log('✅ Force logout successful');
+      // Redirect to home
+      window.location.href = '/';
+    } catch (error) {
+      console.error('❌ Force logout failed:', error);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold text-center mb-8">Button Visibility Test</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Test 1: Default Button */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Default Button</h2>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Default Button
-            </Button>
-          </div>
-
-          {/* Test 2: Debug Button */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Debug Button (Red)</h2>
-            <Button variant="debug">
-              <Plus className="w-4 h-4 mr-2" />
-              Debug Button
-            </Button>
-          </div>
-
-          {/* Test 3: Outline Button */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Outline Button</h2>
-            <Button variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Outline Button
-            </Button>
-          </div>
-
-          {/* Test 4: Custom Styled Button */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Custom Styled Button</h2>
-            <Button 
-              className="bg-red-500 text-white hover:bg-red-600 border-2 border-red-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Custom Button
-            </Button>
-          </div>
-
-          {/* Test 5: Large Button */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Large Button</h2>
-            <Button size="lg" variant="debug">
-              <Plus className="w-4 h-4 mr-2" />
-              Large Button
-            </Button>
-          </div>
-
-          {/* Test 6: Inline Styles Button */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Inline Styles Button</h2>
-            <button 
-              style={{
-                backgroundColor: '#ef4444',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '9999px',
-                border: '2px solid #dc2626',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Inline Styles
-            </button>
-          </div>
+    <div className="container mx-auto p-8 space-y-6">
+      <h1 className="text-3xl font-bold">Button Test Page</h1>
+      
+      <div className="space-y-4">
+        <div className="p-4 border rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">Current User Status</h2>
+          <p><strong>User:</strong> {user ? user.email : 'Not logged in'}</p>
+          <p><strong>User ID:</strong> {user?.id || 'N/A'}</p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Dashboard Style Button (Original Issue)</h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Logout Tests</h2>
+          
           <Button 
-            onClick={() => console.log('Button clicked')}
-            className="mt-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 font-semibold px-6 py-3"
-            size="lg"
+            onClick={handleTestLogout}
+            variant="outline"
+            className="w-full"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add First Transaction (Original Style)
+            Test AuthContext Logout
           </Button>
+          
+          <Button 
+            onClick={handleTestRobustLogout}
+            variant="outline"
+            className="w-full"
+          >
+            Test Robust Logout
+          </Button>
+          
+          <Button 
+            onClick={handleTestForceLogout}
+            variant="destructive"
+            className="w-full"
+          >
+            Test Force Logout (Emergency)
+          </Button>
+        </div>
+
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="font-semibold text-yellow-800">Debug Information</h3>
+          <p className="text-sm text-yellow-700">
+            Check the browser console for detailed logout process logs.
+            This will help identify where the 403 error is occurring.
+          </p>
         </div>
       </div>
     </div>
   );
-};
-
-export default ButtonTest;
+}

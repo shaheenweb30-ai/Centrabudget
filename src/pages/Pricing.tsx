@@ -17,7 +17,7 @@ const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
-  const { formatCurrency } = useSettings();
+
   
   // Force USD formatting for pricing page
   const formatUSD = (amount: number): string => {

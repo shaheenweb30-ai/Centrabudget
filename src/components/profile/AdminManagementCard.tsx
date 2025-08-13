@@ -17,13 +17,6 @@ const AdminManagementCard = ({ user }: AdminManagementCardProps) => {
 
   const adminTools = [
     {
-      title: "Brand Management",
-      description: "Manage business logo, name, and brand colors",
-      icon: Palette,
-      path: "/admin/branding",
-      color: "text-purple-600"
-    },
-    {
       title: "Page Management", 
       description: "Create and manage dynamic pages",
       icon: FileText,
@@ -44,7 +37,6 @@ const AdminManagementCard = ({ user }: AdminManagementCardProps) => {
       path: "/admin/faq",
       color: "text-orange-600"
     },
-
   ];
 
   return (

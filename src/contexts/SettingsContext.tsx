@@ -285,7 +285,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     const handleChange = () => applyTheme();
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [preferences.theme, location.pathname]);
+  }, [preferences.theme]); // Remove location.pathname to prevent unnecessary re-renders
 
   const updatePreferences = (newPreferences: Partial<UserPreferences>) => {
     // If currency is being updated, automatically set the currency symbol

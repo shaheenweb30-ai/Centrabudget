@@ -14,39 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      branding_settings: {
-        Row: {
-          business_name: string | null
-          created_at: string
-          favicon_url: string | null
-          id: string
-          logo_url: string | null
-          primary_color: string | null
-          secondary_color: string | null
-          updated_at: string
-        }
-        Insert: {
-          business_name?: string | null
-          created_at?: string
-          favicon_url?: string | null
-          id?: string
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          updated_at?: string
-        }
-        Update: {
-          business_name?: string | null
-          created_at?: string
-          favicon_url?: string | null
-          id?: string
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       budget_categories: {
         Row: {
           budgeted_amount: number

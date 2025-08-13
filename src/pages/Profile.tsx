@@ -131,9 +131,12 @@ const Profile = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      navigate("/");
+      // Redirect to home page after successful logout
+      window.location.href = '/';
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error('Error during sign out:', error);
+      // Even on error, redirect to ensure user is logged out locally
+      window.location.href = '/';
     }
   };
 

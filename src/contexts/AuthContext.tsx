@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { robustLogout } from '@/lib/auth-utils';
 
 interface AuthContextType {
   user: User | null;
@@ -11,6 +12,7 @@ interface AuthContextType {
   setEmailVerificationStatus: (status: boolean) => void;
   setSigningInState: (state: boolean) => void;
   signOut: () => Promise<void>;
+  validateSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   setEmailVerificationStatus: () => {},
   setSigningInState: () => {},
   signOut: async () => {},
+  validateSession: async () => false,
 });
 
 export const useAuth = () => {
@@ -76,11 +79,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsSigningIn(state);
   };
 
+  const validateSession = async (): Promise<boolean> => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        // Session is invalid, clear local state
+        setSession(null);
+        setUser(null);
+        return false;
+      }
+      
+      // Check if session is expired
+      if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
+        // Session expired, clear local state
+        setSession(null);
+        setUser(null);
+        return false;
+      }
+      
+      // Session is valid
+      setSession(session);
+      setUser(session.user);
+      return true;
+    } catch (error) {
+      console.error('Error validating session:', error);
+      // On error, assume session is invalid
+      setSession(null);
+      setUser(null);
+      return false;
+    }
+  };
+
   const signOut = async (): Promise<void> => {
     try {
-      await supabase.auth.signOut();
+      // Use the robust logout utility that handles 403 errors gracefully
+      await robustLogout();
+      
+      // Always clear local state regardless of success/failure
+      setSession(null);
+      setUser(null);
+      setIsEmailVerified(true);
+      setVerificationChecked(false);
+      
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error in signOut function:', error);
+      // Even on error, clear local state
+      setSession(null);
+      setUser(null);
+      setIsEmailVerified(true);
+      setVerificationChecked(false);
     }
   };
 
@@ -133,8 +181,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     getInitialSession();
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Set up periodic session validation (every 5 minutes)
+    const sessionValidationInterval = setInterval(() => {
+      if (user && session) {
+        validateSession();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(sessionValidationInterval);
+    };
+  }, [user, session]);
 
   return (
     <AuthContext.Provider value={{ 
@@ -145,7 +203,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       checkEmailVerification,
       setEmailVerificationStatus,
       setSigningInState,
-      signOut
+      signOut,
+      validateSession
     }}>
       {children}
     </AuthContext.Provider>

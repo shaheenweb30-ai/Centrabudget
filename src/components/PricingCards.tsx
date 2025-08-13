@@ -49,32 +49,43 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   // Transform pricing plans to match the expected format
-  const plans = pricingPlans.map(plan => ({
-    name: plan.name,
-    subtitle: plan.subtitle,
-    description: plan.description,
-    price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? plan.yearlyPrice! : plan.monthlyPrice!),
-    period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
-    buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
-    buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
-    disabled: plan.id === 'free' ? (user && isFreePlan) : false,
-    popular: plan.popular || false,
-    features: plan.id === 'free' ? [
-      { text: `${limits.categories} categories per month`, included: true },
-      { text: `${limits.budgets} budgets per month`, included: true },
-      { text: `${limits.transactions} transactions per month`, included: true },
-      { text: `${limits.aiInsights} AI insights per month`, included: true },
-      { text: 'Basic recurring detection', included: true },
-      { text: 'Monthly budget periods', included: true },
-      { text: 'Community support', included: true },
-      { text: 'Mobile app access', included: true },
-      { text: 'Basic reports', included: true },
-      { text: 'Export to CSV', included: true }
-    ] : plan.features.map(feature => ({ text: feature, included: true })),
-    icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
-          plan.id === 'pro' ? <Zap className="w-6 h-6" /> : 
-          <Users className="w-6 h-6" />
-  }));
+  const plans = pricingPlans.map(plan => {
+    const monthlyPrice = plan.monthlyPrice || 0;
+    const yearlyPrice = plan.yearlyPrice || 0;
+    const yearlySavings = billingCycle === 'yearly' && plan.id !== 'free' ? 
+      (monthlyPrice * 12) - yearlyPrice : 0;
+    const savingsPercentage = billingCycle === 'yearly' && plan.id !== 'free' ? 
+      Math.round((yearlySavings / (monthlyPrice * 12)) * 100) : 0;
+
+    return {
+      name: plan.name,
+      subtitle: plan.subtitle,
+      description: plan.description,
+      price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? yearlyPrice : monthlyPrice),
+      period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
+      buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
+      buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
+      disabled: plan.id === 'free' ? (user && isFreePlan) : false,
+      popular: plan.popular || false,
+      yearlySavings: yearlySavings,
+      savingsPercentage: savingsPercentage,
+      features: plan.id === 'free' ? [
+        { text: `${limits.categories} categories per month`, included: true },
+        { text: `${limits.budgets} budgets per month`, included: true },
+        { text: `${limits.transactions} transactions per month`, included: true },
+        { text: `${limits.aiInsights} AI insights per month`, included: true },
+        { text: 'Basic recurring detection', included: true },
+        { text: 'Monthly budget periods', included: true },
+        { text: 'Community support', included: true },
+        { text: 'Mobile app access', included: true },
+        { text: 'Basic reports', included: true },
+        { text: 'Export to CSV', included: true }
+      ] : plan.features.map(feature => ({ text: feature, included: true })),
+      icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
+            plan.id === 'pro' ? <Zap className="w-6 h-6" /> : 
+            <Users className="w-6 h-6" />
+    };
+  });
 
   const handleUpgrade = (planName: string) => {
     if (planName === 'Enterprise') {
@@ -161,10 +172,18 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
                     <span className="text-2xl font-bold text-slate-900">{plan.period}</span>
                   )}
                 </div>
+                
+                {/* Show savings for yearly Pro plan */}
                 {billingCycle === 'yearly' && plan.name === 'Pro' && plan.price !== null && (
-                  <p className="text-sm text-green-600 mt-1">
-                    Save {formatUSD((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12) - plan.price)}/year
-                  </p>
+                  <div className="mt-2 text-center">
+                    <div className="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                      <span className="mr-1">🎉</span>
+                      Save {plan.savingsPercentage}% ({formatUSD(plan.yearlySavings)}/year)
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      vs. {formatUSD((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12))} billed monthly
+                    </p>
+                  </div>
                 )}
               </div>
             </CardHeader>

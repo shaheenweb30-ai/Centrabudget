@@ -27,14 +27,33 @@ const Subscription = () => {
   const { user } = useAuth();
   const { isFreePlan, limits, isLoading } = useUserPlan();
   const { plans } = usePricing();
-  const { formatCurrency } = useSettings();
+
   const navigate = useNavigate();
   const [upgrading, setUpgrading] = useState(false);
+  
+  // Force USD formatting for subscription page regardless of user preferences
+  const formatUSD = (amount: number): string => {
+    const absAmount = Math.abs(amount);
+    const sign = amount >= 0 ? '' : '-';
+    
+    try {
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      return `${sign}${formatter.format(absAmount)}`;
+    } catch (error) {
+      return `${sign}$${absAmount.toFixed(2)}`;
+    }
+  };
   
   // Get Pro plan pricing
   const proPlan = plans.find(p => p.id === 'pro');
   const monthlyPrice = proPlan?.monthlyPrice || 12.00;
-  const yearlyPrice = proPlan?.yearlyPrice || 120.00;
+  const yearlyPrice = proPlan?.yearlyPrice || 115.20; // Updated to reflect 20% discount
   const yearlySavings = (monthlyPrice * 12) - yearlyPrice;
 
   // Mock data for current usage - in a real app, this would come from the database
@@ -330,11 +349,11 @@ const Subscription = () => {
                   <div className="text-center">
                     <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                       <div className="text-sm text-amber-700 dark:text-amber-300">
-                        Upgrade to Pro: {formatCurrency(monthlyPrice)}/month or {formatCurrency(yearlyPrice)}/year (one-time payment)
+                        Upgrade to Pro: {formatUSD(monthlyPrice)}/month or {formatUSD(yearlyPrice)}/year (one-time payment)
                       </div>
                       {yearlySavings > 0 && (
                         <div className="text-xs text-amber-600 dark:text-amber-400">
-                          Save {formatCurrency(yearlySavings)} annually with yearly billing
+                          Save {formatUSD(yearlySavings)} annually with yearly billing
                         </div>
                       )}
                     </div>
@@ -385,11 +404,11 @@ const Subscription = () => {
                     </p>
                     <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                       <div className="text-sm text-green-700 dark:text-green-300">
-                        Current Pricing: {formatCurrency(monthlyPrice)}/month or {formatCurrency(yearlyPrice)}/year (one-time payment)
+                        Current Pricing: {formatUSD(monthlyPrice)}/month or {formatUSD(yearlyPrice)}/year (one-time payment)
                       </div>
                       {yearlySavings > 0 && (
                         <div className="text-xs text-green-600 dark:text-green-400">
-                          Save {formatCurrency(yearlySavings)} annually with yearly billing
+                          Save {formatUSD(yearlySavings)} annually with yearly billing
                         </div>
                       )}
                     </div>

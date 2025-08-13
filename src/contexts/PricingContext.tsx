@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface PricingPlan {
   id: string;
@@ -18,22 +17,11 @@ export interface PricingPlan {
   disabled?: boolean;
 }
 
-export interface PricingConfig {
-  id: string;
-  plan_id: string;
-  monthly_price: number;
-  yearly_price: number;
-  updated_at: string;
-  updated_by: string;
-}
-
 interface PricingContextType {
   plans: PricingPlan[];
-  pricingConfig: PricingConfig[];
   isLoading: boolean;
   error: string | null;
   updatePricing: (planId: string, monthlyPrice: number, yearlyPrice: number) => Promise<void>;
-  refreshPricing: () => Promise<void>;
 }
 
 const PricingContext = createContext<PricingContextType | undefined>(undefined);
@@ -46,14 +34,9 @@ export const usePricing = () => {
   return context;
 };
 
-interface PricingProviderProps {
-  children: ReactNode;
-}
-
-export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) => {
+export const PricingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
-  const [pricingConfig, setPricingConfig] = useState<PricingConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +70,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
       subtitle: 'Best for growing users',
       description: 'Advanced features for users who need more power and flexibility.',
       monthlyPrice: 12.00,
-      yearlyPrice: 120.00,
+      yearlyPrice: 115.20, // 20% discount: (12 * 12) * 0.8 = 144 * 0.8 = 115.20
       features: [
         'Unlimited categories',
         'Unlimited budgets',
@@ -137,43 +120,10 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
 
   const fetchPricingConfig = async () => {
     try {
-      console.log('Fetching pricing config...');
-      const { data, error } = await supabase
-        .from('pricing_config')
-        .select('*')
-        .order('updated_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching pricing config:', error);
-        // If table doesn't exist, use default plans
-        console.log('Using default plans due to database error');
-        setPlans(defaultPlans);
-        return;
-      }
-      
-      console.log('Pricing config data:', data);
-
-      if (data && data.length > 0) {
-        setPricingConfig(data);
-        // Update plans with custom pricing
-        const updatedPlans = defaultPlans.map(plan => {
-          const config = data.find(c => c.plan_id === plan.id);
-          if (config) {
-            return {
-              ...plan,
-              monthlyPrice: config.monthly_price,
-              yearlyPrice: config.yearly_price
-            };
-          }
-          return plan;
-        });
-        setPlans(updatedPlans);
-      } else {
-        setPlans(defaultPlans);
-      }
+      // Since pricing_config table doesn't exist, just use default plans
+      setPlans(defaultPlans);
     } catch (err) {
-      console.error('Error fetching pricing config:', err);
-      console.log('Using default plans due to error');
+      console.error('Error in pricing setup:', err);
       setPlans(defaultPlans);
     } finally {
       setIsLoading(false);
@@ -185,45 +135,19 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
 
     // Check if user has admin role from metadata
     const userRole = user.user_metadata?.role;
-    console.log('User role:', userRole);
-    console.log('User metadata:', user.user_metadata);
     
     if (userRole !== 'admin') {
-      console.error('User does not have admin role. Current role:', userRole);
       throw new Error('User does not have admin privileges. Current role: ' + userRole);
     }
 
-    try {
-      console.log('Updating pricing for plan:', planId, 'monthly:', monthlyPrice, 'yearly:', yearlyPrice);
-      console.log('User ID:', user.id);
-      
-      const { error } = await supabase
-        .from('pricing_config')
-        .upsert({
-          plan_id: planId,
-          monthly_price: monthlyPrice,
-          yearly_price: yearlyPrice,
-          updated_at: new Date().toISOString(),
-          updated_by: user.id
-        }, {
-          onConflict: 'plan_id'
-        });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      // Update local state
-      await refreshPricing();
-    } catch (err) {
-      console.error('Error updating pricing:', err);
-      throw err;
-    }
-  };
-
-  const refreshPricing = async () => {
-    await fetchPricingConfig();
+    // Since pricing_config table doesn't exist, just update local state
+    const updatedPlans = plans.map(plan => 
+      plan.id === planId 
+        ? { ...plan, monthlyPrice, yearlyPrice }
+        : plan
+    );
+    
+    setPlans(updatedPlans);
   };
 
   useEffect(() => {
@@ -232,11 +156,9 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
 
   const value: PricingContextType = {
     plans,
-    pricingConfig,
     isLoading,
     error,
-    updatePricing,
-    refreshPricing
+    updatePricing
   };
 
   return (

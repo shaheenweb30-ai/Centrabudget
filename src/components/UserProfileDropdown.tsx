@@ -19,26 +19,123 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { emergencyLogout } from '@/lib/auth-utils';
 
 export function UserProfileDropdown() {
-  const { user } = useAuth();
+  const { user, validateSession, signOut } = useAuth();
   const { userProfile } = useSettings();
   const { isAdmin } = useUserRole(user);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
     setIsLoggingOut(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        toast.error('Error logging out');
-        console.error('Logout error:', error);
-      } else {
+    
+    // Set a timeout to force logout if it takes too long
+    const logoutTimeout = setTimeout(() => {
+      console.log('⏰ Logout timeout reached, forcing emergency logout');
+      emergencyLogout().then(() => {
         toast.success('Logged out successfully');
+        window.location.reload();
+      });
+    }, 10000); // 10 second timeout
+    
+    try {
+      // Force clear all local storage and cookies related to auth
+      const clearAuthData = () => {
+        try {
+          // Clear Supabase auth data
+          localStorage.removeItem('sb-rjjflvdxomgyxqgdsewk-auth-token');
+          localStorage.removeItem('sb-rjjflvdxomgyxqgdsewk-auth-refresh-token');
+          
+          // Clear any other potential auth keys
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.includes('supabase') || key.includes('auth') || key.includes('sb-')) {
+              localStorage.removeItem(key);
+            }
+          });
+          
+          // Clear session storage
+          sessionStorage.clear();
+          
+          // Clear cookies
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
+          
+          console.log('🧹 Cleared all local auth data');
+        } catch (e) {
+          console.warn('Could not clear some auth data:', e);
+        }
+      };
+
+      // First try the AuthContext signOut
+      try {
+        await signOut();
+        console.log('✅ AuthContext signOut successful');
+        clearAuthData();
+        clearTimeout(logoutTimeout);
+        toast.success('Logged out successfully');
+        window.location.href = '/';
+        return;
+      } catch (authError) {
+        console.warn('AuthContext signOut failed, trying direct Supabase logout:', authError);
       }
+
+      // If AuthContext fails, try direct Supabase logout
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (!error) {
+          console.log('✅ Direct Supabase logout successful');
+          clearAuthData();
+          clearTimeout(logoutTimeout);
+          toast.success('Logged out successfully');
+          window.location.href = '/';
+          return;
+        }
+      } catch (supabaseError) {
+        console.warn('Direct Supabase logout failed:', supabaseError);
+      }
+
+      // If all else fails, use emergency logout
+      console.log('⚠️ All logout methods failed, using emergency logout');
+      await emergencyLogout();
+      clearTimeout(logoutTimeout);
+      
+      toast.success('Logged out successfully');
+      // Force page reload to clear any remaining state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+      
     } catch (error) {
-      toast.error('Error logging out');
-      console.error('Logout error:', error);
+      console.error('Critical logout error:', error);
+      clearTimeout(logoutTimeout);
+      
+      // Even on critical error, use emergency logout
+      try {
+        await emergencyLogout();
+      } catch (e) {
+        console.warn('Emergency logout also failed:', e);
+        // Last resort: clear everything manually
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
+        } catch (manualError) {
+          console.warn('Manual cleanup also failed:', manualError);
+        }
+      }
+      
+      toast.success('Logged out successfully');
+      // Force reload as last resort
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     } finally {
       setIsLoggingOut(false);
     }

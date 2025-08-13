@@ -8,7 +8,6 @@ export { useFeaturesContent } from './useFeaturesContent';
 export { useFooterLinks } from './useFooterLinks';
 export { useHomepageContent } from './useHomepageContent';
 export { useImages } from './useImages';
-export { useOptimizedBrandingSettings } from './useOptimizedBrandingSettings';
 export { useOptimizedHomepageContent } from './useOptimizedHomepageContent';
 
 export { usePages } from './usePages';

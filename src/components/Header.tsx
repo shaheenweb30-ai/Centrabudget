@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { Menu, X, ChevronDown, User, Settings, LogOut, AlertTriangle } from 'lucide-react';
 import { Logo } from './Logo';
 import { useResponsive } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { forceLogout } from '@/lib/auth-utils';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,9 +21,24 @@ const Header: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      navigate('/');
+      // Redirect to home page after successful logout
+      window.location.href = '/';
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error during sign out:', error);
+      // Even on error, redirect to ensure user is logged out locally
+      window.location.href = '/';
+    }
+  };
+
+  const handleEmergencyLogout = () => {
+    try {
+      forceLogout();
+      // Redirect to home page after emergency logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error during emergency logout:', error);
+      // Force redirect even on error
+      window.location.href = '/';
     }
   };
 
@@ -168,6 +184,13 @@ const Header: React.FC = () => {
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     {t('common.logout')}
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem onClick={handleEmergencyLogout} className="text-red-600 hover:text-red-700">
+                    <AlertTriangle className="w-4 h4 mr-2" />
+                    Emergency Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

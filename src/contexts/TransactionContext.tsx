@@ -104,11 +104,17 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
   // Update categories whenever transactions change
   useEffect(() => {
     const newCategories = generateCategoriesFromTransactions(transactions);
-    setCategories(newCategories);
+    
+    // Only update if categories actually changed to prevent infinite loops
+    const hasChanged = JSON.stringify(newCategories) !== JSON.stringify(categories);
+    
+    if (hasChanged) {
+      setCategories(newCategories);
+    }
     
     // Save to localStorage
-          localStorage.setItem('centrabudget_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    localStorage.setItem('centrabudget_transactions', JSON.stringify(transactions));
+  }, [transactions]); // Remove categories from dependency to prevent circular updates
 
   const addTransaction = (transactionData: Omit<Transaction, 'id' | 'created_at'>) => {
     const newTransaction: Transaction = {

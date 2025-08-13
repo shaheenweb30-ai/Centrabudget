@@ -50,6 +50,25 @@ const Checkout = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { formatCurrency } = useSettings();
+  
+  // Force USD formatting for checkout regardless of user preferences
+  const formatUSD = (amount: number): string => {
+    const absAmount = Math.abs(amount);
+    const sign = amount >= 0 ? '' : '-';
+    
+    try {
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      return `${sign}${formatter.format(absAmount)}`;
+    } catch (error) {
+      return `${sign}$${absAmount.toFixed(2)}`;
+    }
+  };
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
@@ -93,7 +112,7 @@ const Checkout = () => {
     {
       id: 'pro-yearly',
       name: 'Pro Yearly',
-      price: proPlan?.yearlyPrice || 120.00,
+      price: proPlan?.yearlyPrice || 115.20, // Updated to reflect 20% discount
       billingCycle: 'yearly',
       features: [
         { name: 'Unlimited Transactions', description: 'Track unlimited income and expenses', icon: Zap },
@@ -104,12 +123,12 @@ const Checkout = () => {
         { name: 'Advanced Analytics', description: 'Detailed reports and insights', icon: BarChart3 }
       ],
       popular: true,
-      savings: Math.round(((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 120)) / ((proPlan?.monthlyPrice || 12) * 12) * 100)
+      savings: Math.round(((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 115.20)) / ((proPlan?.monthlyPrice || 12) * 12) * 100)
     }
   ];
 
   const currentPlan = plans.find(p => p.billingCycle === selectedPlan);
-  const yearlySavings = selectedPlan === 'yearly' ? ((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 120)) : 0;
+  const yearlySavings = selectedPlan === 'yearly' ? ((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 115.20)) : 0;
 
   const handlePlanChange = (cycle: 'monthly' | 'yearly') => {
     setSelectedPlan(cycle);
@@ -246,26 +265,18 @@ const Checkout = () => {
                       }`}
                     >
                       Yearly
-                      {selectedPlan === 'yearly' && (
-                        <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs">
-                          Save {formatCurrency(yearlySavings)}
-                        </Badge>
-                      )}
+
                     </Button>
                   </div>
                   
                   <div className="text-center p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
                     <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">
-                      {formatCurrency(currentPlan?.price || 0)}
+                      {formatUSD(currentPlan?.price || 0)}
                     </div>
                     <div className="text-slate-600 dark:text-slate-400">
                       per {selectedPlan === 'monthly' ? 'month' : 'year'}
                     </div>
-                    {selectedPlan === 'yearly' && (
-                                              <div className="text-sm text-green-600 dark:text-green-400 mt-1">
-                          Save {formatCurrency(yearlySavings)} annually
-                        </div>
-                    )}
+
                   </div>
                 </CardContent>
               </Card>
@@ -391,7 +402,7 @@ const Checkout = () => {
                           Processing...
                         </div>
                       ) : (
-                        `Subscribe for ${formatCurrency(currentPlan?.price || 0)}/${selectedPlan === 'monthly' ? 'month' : 'year'}`
+                        `Subscribe for ${formatUSD(currentPlan?.price || 0)}/${selectedPlan === 'monthly' ? 'month' : 'year'}`
                       )}
                     </Button>
                   </form>
@@ -413,20 +424,15 @@ const Checkout = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-600 dark:text-slate-400">Pro Plan ({selectedPlan})</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatCurrency(currentPlan?.price || 0)}
+                        {formatUSD(currentPlan?.price || 0)}
                       </span>
                     </div>
-                    {selectedPlan === 'yearly' && (
-                      <div className="flex justify-between items-center text-green-600 dark:text-green-400">
-                        <span>Annual Savings</span>
-                        <span>-{formatCurrency(yearlySavings)}</span>
-                      </div>
-                    )}
+
                     <div className="border-t border-slate-200 dark:border-slate-600 pt-3">
                       <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total</span>
                         <span className="text-blue-600 dark:text-blue-400">
-                          {formatCurrency(selectedPlan === 'yearly' ? (currentPlan?.price || 0) - yearlySavings : (currentPlan?.price || 0))}
+                          {formatUSD(currentPlan?.price || 0)}
                         </span>
                       </div>
                       <div className="text-sm text-slate-500 dark:text-slate-400">

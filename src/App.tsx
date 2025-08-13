@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { BrandingProvider } from "@/contexts/BrandingContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
 import { PricingProvider } from "@/contexts/PricingContext";
@@ -133,7 +132,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-console.log('App: Creating QueryClient');
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -143,16 +141,12 @@ const queryClient = new QueryClient({
     },
   },
 });
-console.log('App: QueryClient created successfully');
 
 const AppContent = () => {
-  console.log('AppContent: Starting to render');
-  
   return (
     <>
       <AuthProvider>
-        <BrandingProvider>
-          <BrowserRouter>
+        <BrowserRouter>
             <SettingsProvider>
               <TransactionProvider>
                 <PricingProvider>
@@ -259,7 +253,6 @@ const AppContent = () => {
               </TransactionProvider>
             </SettingsProvider>
           </BrowserRouter>
-        </BrandingProvider>
       </AuthProvider>
       <ContentUpdateIndicator isUpdating={false} />
     </>
@@ -267,20 +260,13 @@ const AppContent = () => {
 };
 
 const App = () => {
-  console.log('App: Main component rendering');
-  
-  try {
-    return (
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-        </QueryClientProvider>
-      </ErrorBoundary>
-    );
-  } catch (error) {
-    console.error('App: Error in main render:', error);
-    throw error;
-  }
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AppContent />
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
 };
 
 export default App;
