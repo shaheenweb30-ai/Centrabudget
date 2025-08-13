@@ -37,8 +37,8 @@ const Subscription = () => {
 
   const handleUpgrade = () => {
     setUpgrading(true);
-    // Navigate to pricing page or checkout
-    navigate('/pricing');
+    // Navigate to checkout page
+    navigate('/checkout?plan=pro');
     setUpgrading(false);
   };
 

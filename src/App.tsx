@@ -34,6 +34,7 @@ import Transactions from "./pages/Transactions";
 
 import CategoriesBudget from "./pages/CategoriesBudget";
 import Subscription from "./pages/Subscription";
+import Checkout from "./pages/Checkout";
 
 import Reports from "./pages/Reports";
 
@@ -203,6 +204,11 @@ const AppContent = () => {
                   <Route path="/subscription" element={
                     <ProtectedRoute>
                       <Subscription />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/checkout" element={
+                    <ProtectedRoute>
+                      <Checkout />
                     </ProtectedRoute>
                   } />
 
