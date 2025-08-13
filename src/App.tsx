@@ -29,6 +29,7 @@ import Help from "./pages/Help";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
+import RefundPolicy from "./pages/RefundPolicy";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 
@@ -227,6 +228,7 @@ const AppContent = () => {
                   <Route path="/help" element={<Help />} />
                   <Route path="/privacy" element={<Privacy />} />
                    <Route path="/terms" element={<Terms />} />
+                   <Route path="/refund-policy" element={<RefundPolicy />} />
                    
                    {/* Debug Route */}
                    <Route path="/button-test" element={<ButtonTest />} />

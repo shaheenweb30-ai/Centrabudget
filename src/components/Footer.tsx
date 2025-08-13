@@ -314,6 +314,7 @@ const Footer = () => {
               <FooterLink href="/contact">Contact</FooterLink>
               <FooterLink href="/privacy">Privacy policy</FooterLink>
               <FooterLink href="/terms">Terms of service</FooterLink>
+              <FooterLink href="/refund-policy">Refund policy</FooterLink>
               <FooterLink href="/cookies">Cookies</FooterLink>
             </FooterSection>
           </div>
@@ -440,6 +441,7 @@ const Footer = () => {
               <FooterLink href="/security" className="text-gray-500 hover:text-blue-600">Security</FooterLink>
               <FooterLink href="/compliance" className="text-gray-500 hover:text-blue-600">Compliance</FooterLink>
               <FooterLink href="/privacy" className="text-gray-500 hover:text-blue-600">Privacy</FooterLink>
+              <FooterLink href="/refund-policy" className="text-gray-500 hover:text-blue-600">Refund Policy</FooterLink>
               <FooterLink href="/cookies" className="text-gray-500 hover:text-blue-600 flex items-center gap-1">
                 <Settings className="w-3 h-3" />
                 Cookies

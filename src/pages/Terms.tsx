@@ -25,30 +25,37 @@ const Terms = () => {
               </p>
 
                           <h3>3. Subscriptions</h3>
-            <p>
-              We may offer paid subscriptions. Subscription access may be revoked if
+              <p>
+                We may offer paid subscriptions. Subscription access may be revoked if
                 abuse is detected.
               </p>
 
-              <h3>4. Privacy</h3>
+              <h3>4. Refunds</h3>
+              <p>
+                We partner with Paddle to process payments. Refunds are available within 14 days of purchase or renewal. 
+                To request a refund, contact <a href="mailto:support@centrabudget.com" className="text-blue-600 hover:text-blue-800 underline">support@centrabudget.com</a> with your transaction details. 
+                Our full <a href="/refund-policy" className="text-blue-600 hover:text-blue-800 underline">Refund Policy</a> is available at centrabudget.com/refund-policy.
+              </p>
+
+              <h3>5. Privacy</h3>
               <p>
                 Your use of the service is also governed by our Privacy Policy. Please review it to understand how
                 we collect, use, and safeguard your information.
               </p>
 
-              <h3>5. Termination</h3>
+              <h3>6. Termination</h3>
               <p>
                 We reserve the right to suspend or terminate access to the service at our discretion, including for
                 violations of these terms.
               </p>
 
-              <h3>6. Changes</h3>
+              <h3>7. Changes</h3>
               <p>
                 We may update these terms from time to time. Continued use of the service after changes constitutes
                 acceptance of the revised terms.
               </p>
 
-              <h3>7. Contact</h3>
+              <h3>8. Contact</h3>
               <p>
                 For questions about these Terms, please contact us via the Help page or the Contact page.
               </p>
