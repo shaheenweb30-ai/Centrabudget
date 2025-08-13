@@ -344,23 +344,18 @@ export default function Settings() {
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="currency">Currency</Label>
-                            <div className="relative">
-                              <select
-                                id="currency"
-                                value={preferencesForm.currency}
-                                onChange={(e) => setPreferencesForm(prev => ({ ...prev, currency: e.target.value }))}
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
-                              >
-                                {filteredCurrencies.map((currency) => (
-                                  <option key={currency.code} value={currency.code}>
-                                    {currency.code} - {currency.name} ({currency.symbol})
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                                <ChevronDown className="h-4 w-4 text-slate-400" />
-                              </div>
-                            </div>
+                            <select
+                              id="currency"
+                              value={preferencesForm.currency}
+                              onChange={(e) => setPreferencesForm(prev => ({ ...prev, currency: e.target.value }))}
+                              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                            >
+                              {filteredCurrencies.map((currency) => (
+                                <option key={currency.code} value={currency.code}>
+                                  {currency.code} - {currency.name} ({currency.symbol})
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </div>
                       </div>
