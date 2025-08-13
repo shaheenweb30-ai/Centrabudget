@@ -45,6 +45,7 @@ import {
   Menu,
   X,
   Crown,
+  DollarSign,
 } from "lucide-react";
 import { useResponsive } from "@/hooks/use-mobile";
 
@@ -137,6 +138,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Form Submissions", href: "/settings?tab=admin", icon: MessageSquare },
     { name: "Newsletter Subscribers", href: "/settings?tab=newsletter", icon: Mail },
     { name: "Comparison Configurator", href: "/admin/comparison", icon: FileText },
+    { name: "Pricing Management", href: "/admin/pricing", icon: DollarSign },
   ];
   const isAdminPage = location.pathname.startsWith('/admin');
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
+import { usePricing } from '@/contexts/PricingContext';
 
 interface PricingCardsProps {
   showComparison?: boolean;
@@ -20,78 +21,36 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
 }) => {
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
+  const { plans: pricingPlans } = usePricing();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-  const plans = [
-    {
-      name: 'Free',
-      subtitle: 'Perfect for getting started',
-      description: 'Everything you need to begin your financial journey. No credit card required.',
-      price: 0,
-      period: 'forever',
-      buttonText: user ? 'Current Plan' : 'Get Started Free',
-      buttonVariant: user ? 'outline' : 'default',
-      disabled: user && isFreePlan,
-      popular: false,
-      features: [
-        { text: `${limits.categories} categories per month`, included: true },
-        { text: `${limits.budgets} budgets per month`, included: true },
-        { text: `${limits.transactions} transactions per month`, included: true },
-        { text: `${limits.aiInsights} AI insights per month`, included: true },
-        { text: 'Basic recurring detection', included: true },
-        { text: 'Monthly budget periods', included: true },
-        { text: 'Community support', included: true },
-        { text: 'Mobile app access', included: true }
-      ],
-      icon: <Star className="w-6 h-6" />
-    },
-    {
-      name: 'Pro',
-      subtitle: 'Best for growing users',
-      description: 'Advanced features for users who need more power and flexibility.',
-      price: billingCycle === 'yearly' ? 10 : 12,
-      period: billingCycle === 'yearly' ? 'month, billed yearly' : 'month',
-      buttonText: 'Upgrade to Pro',
-      buttonVariant: 'default',
-      disabled: false,
-      popular: true,
-      features: [
-        { text: 'Unlimited categories', included: true },
-        { text: 'Unlimited budgets', included: true },
-        { text: 'Unlimited transactions', included: true },
-        { text: '50+ AI insights per month', included: true },
-        { text: 'Advanced recurring detection', included: true },
-        { text: 'Custom budget periods', included: true },
-        { text: 'Receipt attachments', included: true },
-        { text: 'Team collaboration (up to 5 users)', included: true },
-        { text: 'API access', included: true },
-        { text: 'Priority support (email + chat)', included: true }
-      ],
-      icon: <Zap className="w-6 h-6" />
-    },
-    {
-      name: 'Enterprise',
-      subtitle: 'For teams and organizations',
-      description: 'Custom solutions with dedicated support and advanced team features.',
-      price: 29,
-      period: 'month',
-      buttonText: 'Contact Sales',
-      buttonVariant: 'outline',
-      disabled: false,
-      popular: false,
-      features: [
-        { text: 'Everything in Pro', included: true },
-        { text: 'Unlimited team collaboration', included: true },
-        { text: 'Custom integrations', included: true },
-        { text: 'White-label options', included: true },
-        { text: 'Dedicated account manager', included: true },
-        { text: 'Custom onboarding', included: true },
-        { text: 'SLA guarantees', included: true },
-        { text: 'Advanced security features', included: true }
-      ],
-      icon: <Users className="w-6 h-6" />
-    }
-  ];
+  // Transform pricing plans to match the expected format
+  const plans = pricingPlans.map(plan => ({
+    name: plan.name,
+    subtitle: plan.subtitle,
+    description: plan.description,
+    price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? plan.yearlyPrice! : plan.monthlyPrice!),
+    period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
+    buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
+    buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
+    disabled: plan.id === 'free' ? (user && isFreePlan) : false,
+    popular: plan.popular || false,
+    features: plan.id === 'free' ? [
+      { text: `${limits.categories} categories per month`, included: true },
+      { text: `${limits.budgets} budgets per month`, included: true },
+      { text: `${limits.transactions} transactions per month`, included: true },
+      { text: `${limits.aiInsights} AI insights per month`, included: true },
+      { text: 'Basic recurring detection', included: true },
+      { text: 'Monthly budget periods', included: true },
+      { text: 'Community support', included: true },
+      { text: 'Mobile app access', included: true },
+      { text: 'Basic reports', included: true },
+      { text: 'Export to CSV', included: true }
+    ] : plan.features.map(feature => ({ text: feature, included: true })),
+    icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
+          plan.id === 'pro' ? <Zap className="w-6 h-6" /> : 
+          <Users className="w-6 h-6" />
+  }));
 
   const handleUpgrade = (planName: string) => {
     if (planName === 'Enterprise') {
@@ -121,9 +80,18 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
         </button>
         <span className={`text-sm font-medium ${billingCycle === 'yearly' ? 'text-slate-900' : 'text-slate-500'}`}>
           Yearly
-          <span className="ml-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-            Save 17%
-          </span>
+          {(() => {
+            const proPlan = pricingPlans.find(p => p.id === 'pro');
+            if (proPlan && proPlan.monthlyPrice && proPlan.yearlyPrice) {
+              const savings = ((proPlan.monthlyPrice * 12 - proPlan.yearlyPrice) / (proPlan.monthlyPrice * 12) * 100).toFixed(0);
+              return (
+                <span className="ml-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  Save {savings}%
+                </span>
+              );
+            }
+            return null;
+          })()}
         </span>
       </div>
 
@@ -160,11 +128,19 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
               
               <div className="mt-6">
                 <div className="flex items-baseline justify-center">
-                  <span className="text-4xl font-bold text-slate-900">${plan.price}</span>
-                  <span className="text-lg text-slate-500 ml-1">/{plan.period}</span>
+                  {plan.price !== null ? (
+                    <>
+                      <span className="text-4xl font-bold text-slate-900">${plan.price}</span>
+                      <span className="text-lg text-slate-500 ml-1">/{plan.period}</span>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-bold text-slate-900">{plan.period}</span>
+                  )}
                 </div>
-                {billingCycle === 'yearly' && plan.name === 'Pro' && (
-                  <p className="text-sm text-green-600 mt-1">Save $24/year</p>
+                {billingCycle === 'yearly' && plan.name === 'Pro' && plan.price !== null && (
+                  <p className="text-sm text-green-600 mt-1">
+                    Save ${((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12) - plan.price).toFixed(2)}/year
+                  </p>
                 )}
               </div>
             </CardHeader>

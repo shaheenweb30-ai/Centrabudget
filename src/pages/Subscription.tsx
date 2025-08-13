@@ -19,13 +19,21 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePricing } from "@/contexts/PricingContext";
 import { useNavigate } from "react-router-dom";
 
 const Subscription = () => {
   const { user } = useAuth();
   const { isFreePlan, limits, isLoading } = useUserPlan();
+  const { plans } = usePricing();
   const navigate = useNavigate();
   const [upgrading, setUpgrading] = useState(false);
+  
+  // Get Pro plan pricing
+  const proPlan = plans.find(p => p.id === 'pro');
+  const monthlyPrice = proPlan?.monthlyPrice || 12.00;
+  const yearlyPrice = proPlan?.yearlyPrice || 120.00;
+  const yearlySavings = (monthlyPrice * 12) - yearlyPrice;
 
   // Mock data for current usage - in a real app, this would come from the database
   const currentUsage = {
@@ -318,6 +326,16 @@ const Subscription = () => {
                     </div>
                   </div>
                   <div className="text-center">
+                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                      <div className="text-sm text-amber-700 dark:text-amber-300">
+                        Upgrade to Pro: ${monthlyPrice}/month or ${yearlyPrice}/year (one-time payment)
+                      </div>
+                      {yearlySavings > 0 && (
+                        <div className="text-xs text-amber-600 dark:text-amber-400">
+                          Save ${yearlySavings} annually with yearly billing
+                        </div>
+                      )}
+                    </div>
                     <Button 
                       onClick={handleUpgrade}
                       disabled={upgrading}
@@ -359,18 +377,28 @@ const Subscription = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center">
-                  <p className="text-slate-600 dark:text-slate-400 mb-4">
-                    Thank you for being a Pro subscriber. You have access to all premium features.
-                  </p>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/settings?tab=billing')}
-                    className="border-green-200 text-green-600 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/50"
-                  >
-                    Manage Billing
-                  </Button>
-                </div>
+                                  <div className="text-center">
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      Thank you for being a Pro subscriber. You have access to all premium features.
+                    </p>
+                    <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                      <div className="text-sm text-green-700 dark:text-green-300">
+                        Current Pricing: ${monthlyPrice}/month or ${yearlyPrice}/year (one-time payment)
+                      </div>
+                      {yearlySavings > 0 && (
+                        <div className="text-xs text-green-600 dark:text-green-400">
+                          Save ${yearlySavings} annually with yearly billing
+                        </div>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate('/settings?tab=billing')}
+                      className="border-green-200 text-green-600 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/50"
+                    >
+                      Manage Billing
+                    </Button>
+                  </div>
               </CardContent>
             </Card>
           )}

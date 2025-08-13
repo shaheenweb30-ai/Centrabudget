@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
+import { usePricing } from '@/contexts/PricingContext';
 import Layout from '@/components/Layout';
 
 const Pricing: React.FC = () => {
@@ -31,90 +32,44 @@ const Pricing: React.FC = () => {
     );
   };
 
-  const plans = [
-    {
-      name: 'Free',
-      subtitle: 'Perfect for getting started',
-      description: 'Everything you need to begin your financial journey. No credit card required.',
-      price: 0,
-      period: 'month',
-      buttonText: user ? 'Current Plan' : 'Get Started Free',
-      buttonVariant: user ? 'outline' : 'default',
-      disabled: user && isFreePlan,
-      popular: false,
-      features: [
-        { text: `${limits.categories} categories per month`, included: true },
-        { text: `${limits.budgets} budgets per month`, included: true },
-        { text: `${limits.transactions} transactions per month`, included: true },
-        { text: `${limits.aiInsights} AI insights per month`, included: true },
-        { text: 'Basic recurring detection', included: true },
-        { text: 'Monthly budget periods', included: true },
-        { text: 'Community support', included: true },
-        { text: 'Mobile app access', included: true },
-        { text: 'Basic reports', included: true },
-        { text: 'Export to CSV', included: true }
-      ],
-      icon: <Star className="w-6 h-6" />
-    },
-    {
-      name: 'Pro',
-      subtitle: 'Best for growing users',
-      description: 'Advanced features for users who need more power and flexibility.',
-      price: billingCycle === 'yearly' ? 10 : 12,
-      period: billingCycle === 'yearly' ? 'month, billed yearly' : 'month',
-      buttonText: 'Upgrade to Pro',
-      buttonVariant: 'default',
-      disabled: false,
-      popular: true,
-      features: [
-        { text: 'Unlimited categories', included: true },
-        { text: 'Unlimited budgets', included: true },
-        { text: 'Unlimited transactions', included: true },
-        { text: '50+ AI insights per month', included: true },
-        { text: 'Advanced recurring detection', included: true },
-        { text: 'Custom budget periods', included: true },
-        { text: 'Receipt attachments', included: true },
-        { text: 'Team collaboration (up to 5 users)', included: true },
-        { text: 'API access', included: true },
-        { text: 'Priority support (email + chat)', included: true },
-        { text: 'Advanced analytics', included: true },
-        { text: 'Custom categories', included: true },
-        { text: 'Budget templates', included: true },
-        { text: 'Financial goals tracking', included: true },
-        { text: 'Investment tracking', included: true }
-      ],
-      icon: <Zap className="w-6 h-6" />
-    },
-    {
-      name: 'Enterprise',
-      subtitle: 'For teams and organizations',
-      description: 'Custom solutions with dedicated support and advanced team features.',
-      price: 29,
-      period: 'month',
-      buttonText: 'Contact Sales',
-      buttonVariant: 'outline',
-      disabled: false,
-      popular: false,
-      features: [
-        { text: 'Everything in Pro', included: true },
-        { text: 'Unlimited team collaboration', included: true },
-        { text: 'Custom integrations', included: true },
-        { text: 'White-label options', included: true },
-        { text: 'Dedicated account manager', included: true },
-        { text: 'Custom onboarding', included: true },
-        { text: 'SLA guarantees', included: true },
-        { text: 'Advanced security features', included: true },
-        { text: 'Custom reporting', included: true },
-        { text: 'Bulk data import/export', included: true }
-      ],
-      icon: <Users className="w-6 h-6" />
-    }
-  ];
+  const { plans: pricingPlans } = usePricing();
+  
+  // Transform pricing plans to match the expected format
+  const plans = pricingPlans.map(plan => ({
+    name: plan.name,
+    subtitle: plan.subtitle,
+    description: plan.description,
+    price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? plan.yearlyPrice! : plan.monthlyPrice!),
+    period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
+    buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
+    buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
+    disabled: plan.id === 'free' ? (user && isFreePlan) : false,
+    popular: plan.popular || false,
+    features: plan.id === 'free' ? [
+      { text: `${limits.categories} categories per month`, included: true },
+      { text: `${limits.budgets} budgets per month`, included: true },
+      { text: `${limits.transactions} transactions per month`, included: true },
+      { text: `${limits.aiInsights} AI insights per month`, included: true },
+      { text: 'Basic recurring detection', included: true },
+      { text: 'Monthly budget periods', included: true },
+      { text: 'Community support', included: true },
+      { text: 'Mobile app access', included: true },
+      { text: 'Basic reports', included: true },
+      { text: 'Export to CSV', included: true }
+    ] : plan.features.map(feature => ({ text: feature, included: true })),
+    icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
+          plan.id === 'pro' ? <Zap className="w-6 h-6" /> : 
+          <Users className="w-6 h-6" />
+  }));
 
   const faqs = [
     {
       question: 'Can I change my plan at any time?',
       answer: 'Yes! You can upgrade to Pro at any time, and you\'ll only pay for the remaining days in your billing cycle. You can also downgrade to the free plan at any time.'
+    },
+    {
+      question: 'How does yearly billing work?',
+      answer: 'Yearly plans are one-time payments that give you access to Pro features for the entire year. You pay the full yearly amount upfront, and your plan automatically renews for another year unless you cancel. This saves you 17% compared to monthly billing.'
     },
     {
       question: 'What happens when I reach my free plan limits?',
@@ -205,6 +160,23 @@ const Pricing: React.FC = () => {
                 </span>
               </span>
             </div>
+            
+            {/* Billing cycle info */}
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-600">
+                {billingCycle === 'yearly' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Yearly plans are one-time payments
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    Monthly plans are billed monthly
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
         </section>
 
@@ -254,13 +226,31 @@ const Pricing: React.FC = () => {
                       
                       <div className="mt-6">
                         <div className="flex items-baseline justify-center">
-                          <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                          <span className="text-lg text-gray-500 ml-2">/{plan.period}</span>
+                                          {plan.price !== null ? (
+                  <>
+                    <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                    <span className="text-lg text-gray-500 ml-2">/{plan.period}</span>
+                  </>
+                ) : (
+                  <span className="text-2xl font-bold text-gray-900">{plan.period}</span>
+                )}
                         </div>
                         {billingCycle === 'yearly' && plan.name === 'Pro' && (
-                          <div className="mt-2 inline-flex items-center px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-medium rounded-full border border-green-200">
-                            <span className="w-1 h-1 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                            Save $24/year
+                          <div className="mt-2 space-y-2">
+                            <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-medium rounded-full border border-green-200">
+                              <span className="w-1 h-1 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                              Save {(() => {
+                                const proPlan = pricingPlans.find(p => p.id === 'pro');
+                                if (proPlan && proPlan.monthlyPrice && proPlan.yearlyPrice) {
+                                  return Math.round(((proPlan.monthlyPrice * 12 - proPlan.yearlyPrice) / (proPlan.monthlyPrice * 12) * 100));
+                                }
+                                return 17;
+                              })()}%
+                            </div>
+                            <div className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full border border-blue-200">
+                              <span className="w-1 h-1 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
+                              One-time payment
+                            </div>
                           </div>
                         )}
                       </div>

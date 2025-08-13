@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
+import { PricingProvider } from "@/contexts/PricingContext";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/react";
@@ -45,6 +46,7 @@ import AdminFooter from "./pages/admin/AdminFooter";
 import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTranslations from "./pages/admin/AdminTranslations";
+import AdminPricing from "./pages/admin/AdminPricing";
 
 // Import new auth pages
 import { 
@@ -146,11 +148,12 @@ const AppContent = () => {
           <BrowserRouter>
             <SettingsProvider>
               <TransactionProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  {import.meta.env.PROD && <Analytics />}
-                  <ScrollToTop />
-                  <Routes>
+                <PricingProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    {import.meta.env.PROD && <Analytics />}
+                    <ScrollToTop />
+                    <Routes>
                   <Route path="/" element={<Homepage1 />} />
                   <Route path="/features" element={<Features />} />
                   <Route path="/pricing" element={<Pricing />} />
@@ -225,11 +228,13 @@ const AppContent = () => {
                   <Route path="/admin/faq" element={<AdminFAQ />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
                   <Route path="/admin/translations" element={<AdminTranslations />} />
+                  <Route path="/admin/pricing" element={<AdminPricing />} />
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </TooltipProvider>
-            </TransactionProvider>
+                  </TooltipProvider>
+                </PricingProvider>
+              </TransactionProvider>
             </SettingsProvider>
           </BrowserRouter>
         </BrandingProvider>

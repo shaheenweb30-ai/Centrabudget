@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePricing } from "@/contexts/PricingContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,11 +68,16 @@ const Checkout = () => {
     }
   }, [planFromUrl]);
 
+  const { plans: pricingPlans } = usePricing();
+  
+  // Get Pro plan from pricing context
+  const proPlan = pricingPlans.find(p => p.id === 'pro');
+  
   const plans: Plan[] = [
     {
       id: 'pro-monthly',
       name: 'Pro Monthly',
-      price: 9.99,
+      price: proPlan?.monthlyPrice || 12.00,
       billingCycle: 'monthly',
       features: [
         { name: 'Unlimited Transactions', description: 'Track unlimited income and expenses', icon: Zap },
@@ -85,7 +91,7 @@ const Checkout = () => {
     {
       id: 'pro-yearly',
       name: 'Pro Yearly',
-      price: 99.99,
+      price: proPlan?.yearlyPrice || 120.00,
       billingCycle: 'yearly',
       features: [
         { name: 'Unlimited Transactions', description: 'Track unlimited income and expenses', icon: Zap },
@@ -96,12 +102,12 @@ const Checkout = () => {
         { name: 'Advanced Analytics', description: 'Detailed reports and insights', icon: BarChart3 }
       ],
       popular: true,
-      savings: 20
+      savings: Math.round(((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 120)) / ((proPlan?.monthlyPrice || 12) * 12) * 100)
     }
   ];
 
   const currentPlan = plans.find(p => p.billingCycle === selectedPlan);
-  const yearlySavings = selectedPlan === 'yearly' ? 19.89 : 0;
+  const yearlySavings = selectedPlan === 'yearly' ? ((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 120)) : 0;
 
   const handlePlanChange = (cycle: 'monthly' | 'yearly') => {
     setSelectedPlan(cycle);
@@ -422,7 +428,7 @@ const Checkout = () => {
                         </span>
                       </div>
                       <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {selectedPlan === 'monthly' ? 'Billed monthly' : 'Billed annually'}
+                        {selectedPlan === 'monthly' ? 'Billed monthly' : 'One-time annual payment'}
                       </div>
                     </div>
                   </div>
