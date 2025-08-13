@@ -57,6 +57,7 @@ import {
   ProtectedRoute
 } from "@/components/auth";
 
+import { OnboardingWelcome } from "@/components/OnboardingWelcome";
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -174,6 +175,11 @@ const AppContent = () => {
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/onboarding" element={
+                    <ProtectedRoute>
+                      <OnboardingWelcome />
                     </ProtectedRoute>
                   } />
                   <Route path="/transactions" element={

@@ -8,6 +8,17 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Validate environment variables
+if (!SUPABASE_URL) {
+  console.error('Supabase client: SUPABASE_URL is not defined');
+  throw new Error('SUPABASE_URL is required');
+}
+
+if (!SUPABASE_PUBLISHABLE_KEY) {
+  console.error('Supabase client: SUPABASE_PUBLISHABLE_KEY is not defined');
+  throw new Error('SUPABASE_PUBLISHABLE_KEY is required');
+}
+
 console.log('Supabase client: Initializing with URL:', SUPABASE_URL);
 console.log('Supabase client: Key available:', !!SUPABASE_PUBLISHABLE_KEY);
 
@@ -33,8 +44,66 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // Enhanced configuration for better email verification handling
+    onAuthStateChange: (event, session) => {
+      console.log('🔍 Supabase auth state change:', event, session ? 'Session exists' : 'No session');
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log('✅ User signed in or token refreshed');
+        if (session?.user) {
+          console.log('👤 User email:', session.user.email);
+          console.log('✅ Email confirmed:', !!session.user.email_confirmed_at);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log('🚪 User signed out');
+      } else if (event === 'USER_UPDATED') {
+        console.log('🔄 User updated');
+        if (session?.user) {
+          console.log('👤 Updated user email:', session.user.email);
+          console.log('✅ Email confirmed:', !!session.user.email_confirmed_at);
+        }
+      }
+    }
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'centrabudget-web'
+    }
   }
 });
 
 console.log('Supabase client: Created successfully');
+
+// Test connection and session detection
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.warn('Supabase client: Initial connection test failed:', error.message);
+  } else {
+    console.log('Supabase client: Connection test successful');
+    if (data.session) {
+      console.log('✅ Existing session found:', data.session.user.email);
+    } else {
+      console.log('ℹ️ No existing session found');
+    }
+  }
+});
+
+// Listen for auth state changes globally
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('🌐 Global auth state change:', event, session ? 'Session exists' : 'No session');
+  
+  // Handle email verification specifically
+  if (event === 'SIGNED_IN' && session?.user) {
+    if (session.user.email_confirmed_at) {
+      console.log('🎉 Email verified user signed in successfully!');
+      // Store new user flag for onboarding
+      try {
+        localStorage.setItem('centrabudget_newUser', 'true');
+        localStorage.setItem('centrabudget_welcomeShown', 'false');
+      } catch {}
+    } else {
+      console.log('⚠️ User signed in but email not verified yet');
+    }
+  }
+});

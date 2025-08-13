@@ -6,7 +6,7 @@ import { AuthLayout } from "./AuthLayout";
 import { Logo } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Loader2, Mail } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Mail, ArrowRight, RefreshCw } from "lucide-react";
 
 export const VerifyEmailPage = () => {
   const [loading, setLoading] = useState(true);
@@ -23,14 +23,11 @@ export const VerifyEmailPage = () => {
       
       console.log('🔍 DEBUG: Starting verification process...');
       console.log('🔍 DEBUG: Current URL:', window.location.href);
-      console.log('🔍 DEBUG: Current hash:', window.location.hash);
-      console.log('🔍 DEBUG: Current search params:', window.location.search);
       
       // Get the current URL and extract tokens from hash fragment
       const url = new URL(window.location.href);
       const hash = window.location.hash;
       
-      console.log('🔍 DEBUG: Parsed URL:', url.toString());
       console.log('🔍 DEBUG: Hash length:', hash.length);
       
       // Parse hash fragment for tokens (Supabase sends tokens in hash, not query params)
@@ -47,6 +44,7 @@ export const VerifyEmailPage = () => {
           type = hashParams.get('type');
           
           console.log('🔍 DEBUG: Hash parsing successful');
+          console.log('🔍 DEBUG: Type:', type);
         } catch (hashError) {
           console.error('❌ ERROR: Failed to parse hash:', hashError);
         }
@@ -65,8 +63,6 @@ export const VerifyEmailPage = () => {
       
       if (accessToken && refreshToken) {
         console.log('🔍 DEBUG: Processing verification with tokens...');
-        console.log('🔍 DEBUG: Access token length:', accessToken.length);
-        console.log('🔍 DEBUG: Refresh token length:', refreshToken.length);
         
         // Set the session with the tokens from the hash
         const { data, error } = await supabase.auth.setSession({
@@ -99,49 +95,34 @@ export const VerifyEmailPage = () => {
             console.log('✅ SUCCESS: Email verified successfully, redirecting to dashboard...');
             setVerificationStatus('success');
             
-            // Force a complete session refresh
-            console.log('🔄 DEBUG: Refreshing session...');
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            console.log('🔄 DEBUG: Session refresh result:', { 
-              success: !refreshError, 
-              error: refreshError?.message 
+            // Store that this is a new user for onboarding
+            try {
+              localStorage.setItem('centrabudget_newUser', 'true');
+              localStorage.setItem('centrabudget_welcomeShown', 'false');
+            } catch {}
+            
+            // Show success toast
+            toast({
+              title: "Email verified successfully! 🎉",
+              description: "Welcome to CentraBudget! Redirecting you to the dashboard...",
             });
             
-            // Double-check the user is still authenticated
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            console.log('🔍 DEBUG: Current user after refresh:', { 
-              authenticated: !!currentUser, 
-              email: currentUser?.email,
-              emailConfirmed: currentUser?.email_confirmed_at
-            });
-            
-            if (currentUser && currentUser.email_confirmed_at) {
-              console.log('✅ SUCCESS: User confirmed authenticated, redirecting...');
-              
-              // Force refresh the page to ensure AuthContext is updated
-              console.log('🔄 DEBUG: Forcing page refresh to update auth context...');
-              
-              // Show success toast
-              toast({
-                title: "Email verified successfully!",
-                description: "Welcome to CentraBudget! Redirecting to dashboard...",
-              });
-              
-              // Redirect to dashboard
-              navigate("/dashboard");
-            } else {
-              console.error('❌ ERROR: User not properly authenticated after refresh');
-              setVerificationStatus('error');
-              setErrorMessage('Authentication failed after verification. Please try signing in.');
-            }
+            // Force a page refresh to ensure AuthContext is properly updated
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1500);
+            return;
           } else {
-            console.log('⚠️ WARNING: Email not yet verified, checking status...');
-            setVerificationStatus('pending');
+            console.log('⚠️ WARNING: Email not confirmed after session set');
+            setVerificationStatus('error');
+            setErrorMessage('Email verification failed. Please try again.');
+            return;
           }
         } else {
-          console.log('❌ ERROR: No session or user in response');
+          console.log('❌ ERROR: No session or user data after setting session');
           setVerificationStatus('error');
-          setErrorMessage('Verification failed. Please try again.');
+          setErrorMessage('Failed to create session. Please try signing in again.');
+          return;
         }
       } else {
         console.log('🔍 DEBUG: No tokens in hash, checking current auth state...');
@@ -149,148 +130,74 @@ export const VerifyEmailPage = () => {
         // Check if user is already authenticated and verified
         const { data: { user } } = await supabase.auth.getUser();
         
-        if (user) {
-          if (user.email_confirmed_at) {
-            console.log('✅ SUCCESS: User already verified, redirecting to dashboard...');
-            setVerificationStatus('success');
-            
-            toast({
-              title: "Already verified!",
-              description: "Redirecting to dashboard...",
-            });
-            
-            // Redirect to dashboard
-            navigate("/dashboard");
-          } else {
-            console.log('⚠️ WARNING: User not verified yet');
-            setVerificationStatus('pending');
-          }
+        if (user && user.email_confirmed_at) {
+          console.log('✅ SUCCESS: User already verified, redirecting to dashboard...');
+          setVerificationStatus('success');
+          
+          // Store that this is a new user for onboarding
+          try {
+            localStorage.setItem('centrabudget_newUser', 'true');
+            localStorage.setItem('centrabudget_welcomeShown', 'false');
+          } catch {}
+          
+          toast({
+            title: "Already verified! 🎉",
+            description: "Redirecting to dashboard...",
+          });
+          
+          // Force a page refresh to ensure AuthContext is properly updated
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1500);
+          return;
+        } else if (user && !user.email_confirmed_at) {
+          console.log('⚠️ WARNING: User not verified yet');
+          setVerificationStatus('pending');
         } else {
-          console.log('🔍 DEBUG: No user found, checking if we can verify by email...');
-          
-          // Try to get the email from localStorage (set during signup)
-          const lastEmail = localStorage.getItem('lastEmail');
-          
-          if (lastEmail) {
-            console.log('🔍 DEBUG: Found email in localStorage:', lastEmail);
-            
-            // Try to check if this email is already verified by attempting a sign-in
-            try {
-              const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                email: lastEmail,
-                password: 'dummy-password-to-check-status' // This will fail but we can check the error
-              });
-              
-              if (signInError && signInError.message.includes('Invalid login credentials')) {
-                // This means the email exists but password is wrong
-                // Let's try to get user info another way
-                console.log('🔍 DEBUG: Email exists, checking verification status...');
-                
-                // Try to send a password reset to check if email is verified
-                const { error: resetError } = await supabase.auth.resetPasswordForEmail(lastEmail, {
-                  redirectTo: `${window.location.origin}/verify-email`
-                });
-                
-                if (!resetError) {
-                  console.log('✅ SUCCESS: Password reset email sent, user likely verified');
-                  setVerificationStatus('success');
-                  
-                  toast({
-                    title: "Email verified!",
-                    description: "You can now sign in with your password.",
-                  });
-                  
-                  // Redirect to login
-                  setTimeout(() => {
-                    window.location.href = '/login';
-                  }, 2000);
-                  return;
-                }
-              }
-            } catch (checkError) {
-              console.log('🔍 DEBUG: Could not check email status:', checkError);
-            }
-          }
-          
-          console.log('🔍 DEBUG: No user found, showing pending state');
+          console.log('🔍 DEBUG: No user found, showing manual verification instructions');
           setVerificationStatus('pending');
         }
       }
     } catch (error) {
-      console.error('❌ ERROR: Verification error:', error);
+      console.error('❌ ERROR: Verification process failed:', error);
       setVerificationStatus('error');
-      setErrorMessage(`Unexpected error: ${error.message}`);
+      setErrorMessage('Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Auto-verify when component mounts
   useEffect(() => {
-    // Add a small delay to ensure hash is available
-    const timer = setTimeout(() => {
-      handleVerification();
-    }, 100);
+    // Check if we have any URL parameters that might indicate email verification
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
     
-    return () => clearTimeout(timer);
-  }, [navigate, toast]);
-
-  const handleResendVerification = async () => {
-    try {
-      setLoading(true);
-      
-      // Get the email from localStorage or prompt user
-      const email = localStorage.getItem('lastEmail');
-      
-      if (!email) {
-        setErrorMessage('Please enter your email address to resend verification.');
-        return;
-      }
-
-      console.log('Resending verification email to:', email);
-      console.log('Redirect URL:', `${window.location.origin}/verify-email`);
-
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-        options: {
-          emailRedirectTo: 'https://www.centrabudget.com/verify-email',
-        }
-      });
-
-      console.log('Resend response:', { error });
-
-      if (error) {
-        console.error('Resend error:', error);
-        setErrorMessage(error.message);
-        toast({
-          title: "Resend failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        console.log('Verification email resent successfully');
-        toast({
-          title: "Verification email sent",
-          description: "Please check your inbox and spam folder.",
-        });
-        setErrorMessage('');
-      }
-    } catch (error) {
-      console.error('Resend error:', error);
-      setErrorMessage('Failed to resend verification email.');
-    } finally {
-      setLoading(false);
+    console.log('🔍 DEBUG: URL search params:', Object.fromEntries(urlParams.entries()));
+    console.log('🔍 DEBUG: URL hash params:', Object.fromEntries(hashParams.entries()));
+    console.log('🔍 DEBUG: Full URL:', window.location.href);
+    console.log('🔍 DEBUG: Hash:', window.location.hash);
+    
+    // If we have any verification-related parameters, try to handle them
+    if (urlParams.has('token') || urlParams.has('type') || hashParams.has('access_token')) {
+      console.log('🔍 DEBUG: Found verification parameters, processing...');
+      handleVerification();
+    } else {
+      console.log('🔍 DEBUG: No verification parameters found, checking auth state...');
+      handleVerification();
     }
-  };
+  }, []);
 
+  // Handle manual verification button click
   const handleManualVerification = async () => {
     try {
       setLoading(true);
-      console.log('🔍 DEBUG: Attempting manual verification...');
       
-      // Try to get the current user
+      console.log('🔍 DEBUG: Manual verification triggered');
+      
+      // Check current auth state
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔍 DEBUG: Current user:', { 
+      console.log('🔍 DEBUG: Current user state:', { 
         exists: !!user, 
         email: user?.email,
         emailConfirmed: user?.email_confirmed_at 
@@ -300,359 +207,319 @@ export const VerifyEmailPage = () => {
         console.log('✅ SUCCESS: User is verified, redirecting...');
         setVerificationStatus('success');
         
+        // Store that this is a new user for onboarding
+        try {
+          localStorage.setItem('centrabudget_newUser', 'true');
+          localStorage.setItem('centrabudget_welcomeShown', 'false');
+        } catch {}
+        
         toast({
-          title: "Verification successful!",
+          title: "Email verified! 🎉",
           description: "Redirecting to dashboard...",
         });
         
-        // Force redirect
-        window.location.href = '/dashboard';
-      } else {
-        console.log('⚠️ WARNING: User not verified or not found');
-        setVerificationStatus('pending');
-        
-        toast({
-          title: "Verification pending",
-          description: "Please check your email and click the verification link.",
-        });
-      }
-    } catch (error) {
-      console.error('❌ ERROR: Manual verification failed:', error);
-      setVerificationStatus('error');
-      setErrorMessage('Manual verification failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDirectVerification = async () => {
-    try {
-      setLoading(true);
-      console.log('🔍 DEBUG: Attempting direct email verification check...');
-      
-      // Get the email from localStorage or prompt user
-      const email = localStorage.getItem('lastEmail');
-      
-      if (!email) {
-        setErrorMessage('No email found. Please enter your email address.');
-        return;
-      }
-      
-      console.log('🔍 DEBUG: Checking verification for email:', email);
-      
-      // Try to sign in with the email to check if it's verified
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          emailRedirectTo: 'https://www.centrabudget.com/verify-email',
-        }
-      });
-      
-      if (error) {
-        console.error('❌ ERROR: OTP signin failed:', error);
-        
-        // If OTP fails, try to check the user directly
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user && user.email === email && user.email_confirmed_at) {
-          console.log('✅ SUCCESS: User is verified via direct check!');
-          setVerificationStatus('success');
-          
-          toast({
-            title: "Email verified!",
-            description: "Redirecting to dashboard...",
-          });
-          
-          // Force redirect
+        // Force a page refresh to ensure AuthContext is properly updated
+        setTimeout(() => {
           window.location.href = '/dashboard';
-          return;
-        }
+        }, 1500);
+      } else if (user && !user.email_confirmed_at) {
+        console.log('⚠️ WARNING: User exists but email not confirmed');
+        setVerificationStatus('pending');
+        setErrorMessage('Your email is not verified yet. Please check your inbox and click the verification link.');
+      } else {
+        console.log('🔍 DEBUG: No user found, checking if we can verify by email');
         
-        setErrorMessage('Could not verify email. Please try signing in directly.');
-        return;
+        // Try to get the email from localStorage (set during signup)
+        const lastEmail = localStorage.getItem('lastEmail');
+        
+        if (lastEmail) {
+          console.log('🔍 DEBUG: Found email in localStorage:', lastEmail);
+          
+          // Try to check if this email is already verified by attempting a sign-in
+          try {
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: lastEmail,
+              password: 'dummy-password-to-check-status' // This will fail but we can check the error
+            });
+            
+            if (signInError && signInError.message.includes('Invalid login credentials')) {
+              // This means the email exists but password is wrong
+              console.log('🔍 DEBUG: Email exists, checking verification status...');
+              
+              // Try to get user info another way
+              const { data: { user: emailUser } } = await supabase.auth.getUser();
+              
+              if (emailUser && emailUser.email === lastEmail) {
+                if (emailUser.email_confirmed_at) {
+                  console.log('✅ SUCCESS: User is verified via email check!');
+                  setVerificationStatus('success');
+                  
+                  // Store that this is a new user for onboarding
+                  try {
+                    localStorage.setItem('centrabudget_newUser', 'true');
+                    localStorage.setItem('centrabudget_welcomeShown', 'false');
+                  } catch {}
+                  
+                  toast({
+                    title: "Email verified! 🎉",
+                    description: "Redirecting to dashboard...",
+                  });
+                  
+                  setTimeout(() => {
+                    window.location.href = '/dashboard';
+                  }, 1500);
+                  return;
+                } else {
+                  console.log('⚠️ WARNING: Email exists but not verified');
+                  setVerificationStatus('pending');
+                  setErrorMessage('Please check your email and click the verification link.');
+                }
+              } else {
+                console.log('🔍 DEBUG: Could not determine user status');
+                setVerificationStatus('pending');
+                setErrorMessage('Please check your email and click the verification link.');
+              }
+            } else {
+              console.log('🔍 DEBUG: Unexpected sign-in response:', signInError);
+              setVerificationStatus('pending');
+              setErrorMessage('Please check your email and click the verification link.');
+            }
+          } catch (checkError) {
+            console.log('🔍 DEBUG: Could not check email status:', checkError);
+            setVerificationStatus('pending');
+            setErrorMessage('Please check your email and click the verification link.');
+          }
+        } else {
+          console.log('🔍 DEBUG: No email found in localStorage');
+          setVerificationStatus('pending');
+          setErrorMessage('Please check your email and click the verification link.');
+        }
       }
-      
-      console.log('✅ SUCCESS: OTP sent, user should check email');
-      toast({
-        title: "Check your email",
-        description: "We've sent you a new verification link.",
-      });
-      
     } catch (error) {
-      console.error('❌ ERROR: Direct verification failed:', error);
-      setErrorMessage('Direct verification failed. Please try again.');
+      console.error('Manual verification failed:', error);
+      setVerificationStatus('error');
+      setErrorMessage('Verification check failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCheckVerificationStatus = async () => {
+  // Handle resend verification email
+  const handleResendVerification = async () => {
     try {
       setLoading(true);
-      console.log('🔍 DEBUG: Checking verification status...');
       
-      const email = localStorage.getItem('lastEmail');
-      if (!email) {
+      // Get the email from localStorage (set during signup)
+      const lastEmail = localStorage.getItem('lastEmail');
+      
+      if (!lastEmail) {
         setErrorMessage('No email found. Please try signing up again.');
         return;
       }
       
-      // Try to get user info by attempting to sign in
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: 'dummy-password-to-check-status'
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: lastEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/verify-email`
+        }
       });
       
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          // Email exists, now check if it's verified
-          console.log('🔍 DEBUG: Email exists, checking verification...');
-          
-          // Try to get user info another way
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (user && user.email === email) {
-            if (user.email_confirmed_at) {
-              console.log('✅ SUCCESS: User is verified!');
-              setVerificationStatus('success');
-              
-              toast({
-                title: "Email verified!",
-                description: "You can now sign in with your password.",
-              });
-              
-              setTimeout(() => {
-                window.location.href = '/login';
-              }, 2000);
-            } else {
-              console.log('⚠️ WARNING: Email not verified yet');
-              setVerificationStatus('pending');
-              toast({
-                title: "Email not verified",
-                description: "Please check your email and click the verification link.",
-              });
-            }
-          } else {
-            setErrorMessage('Could not determine verification status. Please try signing in.');
-          }
-        } else {
-          setErrorMessage(`Error: ${error.message}`);
-        }
+        setErrorMessage(`Failed to resend verification: ${error.message}`);
       } else {
-        // This shouldn't happen with dummy password
-        setErrorMessage('Unexpected response. Please try again.');
+        toast({
+          title: "Verification email sent! 📧",
+          description: "Please check your inbox and click the verification link.",
+        });
+        setVerificationStatus('pending');
       }
     } catch (error) {
-      console.error('❌ ERROR: Status check failed:', error);
-      setErrorMessage('Status check failed. Please try again.');
+      console.error('Resend verification failed:', error);
+      setErrorMessage('Failed to resend verification email. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="text-center space-y-6">
-          <div className="flex justify-center">
-            <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Verifying your email...
-          </h1>
-          <p className="text-muted-foreground">
-            Please wait while we verify your email address.
-          </p>
-        </div>
-      );
+  // Handle refresh verification check
+  const handleRefreshVerification = async () => {
+    try {
+      setLoading(true);
+      setVerificationStatus('checking');
+      
+      // Wait a moment and then check again
+      setTimeout(async () => {
+        await handleVerification();
+      }, 1000);
+    } catch (error) {
+      console.error('Refresh verification failed:', error);
+      setVerificationStatus('error');
+      setErrorMessage('Failed to refresh verification status. Please try again.');
     }
+  };
 
-    switch (verificationStatus) {
-      case 'success':
-        return (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Email verified successfully!
-            </h1>
-            <p className="text-muted-foreground">
-              Welcome to CentraBudget! You'll be redirected to the dashboard shortly.
-            </p>
-            <Button
-              onClick={() => navigate('/dashboard')}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              Go to Dashboard
-            </Button>
-          </div>
-        );
-
-      case 'error':
-        return (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <XCircle className="w-8 h-8 text-red-600" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Verification failed
-            </h1>
-            <p className="text-muted-foreground">
-              {errorMessage || 'There was an error verifying your email address.'}
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={handleVerification}
-                variant="outline"
-                className="w-full"
-              >
-                Try Again
-              </Button>
-              <Button
-                onClick={() => navigate('/signup')}
-                variant="outline"
-                className="w-full"
-              >
-                Back to Sign Up
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 'pending':
-      default:
-        return (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <Mail className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Verify your email
-            </h1>
-            <p className="text-muted-foreground">
-              We've sent a verification link to your email address. Please check your inbox and click the verification link.
-            </p>
-            
-            {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{errorMessage}</p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <Button
-                onClick={handleResendVerification}
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  'Resend verification email'
-                )}
-              </Button>
-              
-              <Button
-                onClick={handleManualVerification}
-                disabled={loading}
-                variant="outline"
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  '🔄 Check Verification Status'
-                )}
-              </Button>
-              
-              <Button
-                onClick={handleDirectVerification}
-                disabled={loading}
-                variant="outline"
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  '📧 Verify Email Directly'
-                )}
-              </Button>
-              
-              <Button
-                onClick={handleCheckVerificationStatus}
-                disabled={loading}
-                variant="outline"
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  '🔍 Check Verification Status'
-                )}
-              </Button>
-              
-              <Button
-                onClick={() => navigate('/login')}
-                variant="outline"
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-
-            <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                Already verified?{' '}
-                <Button
-                  variant="link"
-                  className="p-0 h-auto text-primary hover:underline underline-offset-2"
-                  onClick={() => navigate('/login')}
-                >
-                  Sign in here
-                </Button>
-              </p>
-            </div>
-          </div>
-        );
-    }
+  // Handle go to login
+  const handleGoToLogin = () => {
+    navigate('/login');
   };
 
   return (
     <AuthLayout>
-      <div className="relative">
-        <div className="absolute -z-10 -inset-6">
-          <div className="absolute top-0 right-10 w-24 h-24 bg-blue-200 rounded-full opacity-20 animate-pulse" />
-          <div className="absolute bottom-0 left-10 w-20 h-20 bg-purple-200 rounded-full opacity-20 animate-bounce" />
-          <div className="absolute top-1/2 right-1/3 w-14 h-14 bg-green-200 rounded-full opacity-20 animate-ping" />
+      <div className="w-full max-w-md mx-auto">
+        <div className="text-center mb-8">
+          <Logo className="mx-auto mb-6" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Verify Your Email
+          </h1>
+          <p className="text-gray-600">
+            Please verify your email address to continue
+          </p>
         </div>
 
-        <Card className="rounded-2xl border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-8">
-            <div className="flex items-center justify-center mb-6">
-              <Logo size="md" />
-            </div>
-            {renderContent()}
+        <Card className="w-full">
+          <CardContent className="p-6">
+            {verificationStatus === 'checking' && (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+                <p className="text-gray-600">Checking verification status...</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  This may take a few moments...
+                </p>
+              </div>
+            )}
+
+            {verificationStatus === 'success' && (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Email Verified Successfully! 🎉
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Welcome to CentraBudget! You're being redirected to the dashboard...
+                </p>
+                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+            )}
+
+            {verificationStatus === 'error' && (
+              <div className="text-center py-8">
+                <XCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Verification Failed
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  {errorMessage || 'There was an issue verifying your email. Please try again.'}
+                </p>
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleManualVerification}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                    )}
+                    Check Verification Status
+                  </Button>
+                  <Button
+                    onClick={handleRefreshVerification}
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Status
+                  </Button>
+                  <Button
+                    onClick={handleResendVerification}
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Resend Verification Email
+                  </Button>
+                  <Button
+                    onClick={handleGoToLogin}
+                    variant="ghost"
+                    className="w-full"
+                  >
+                    Go to Login
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {verificationStatus === 'pending' && (
+              <div className="text-center py-8">
+                <Mail className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Check Your Email
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  We've sent you a verification link. Please check your email and click the link to verify your account.
+                </p>
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleManualVerification}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                    )}
+                    I've Verified My Email
+                  </Button>
+                  <Button
+                    onClick={handleRefreshVerification}
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Status
+                  </Button>
+                  <Button
+                    onClick={handleResendVerification}
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Resend Verification Email
+                  </Button>
+                  <Button
+                    onClick={handleGoToLogin}
+                    variant="ghost"
+                    className="w-full"
+                  >
+                    Go to Login
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Help Section */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500 mb-4">
+            Having trouble? Check your spam folder or contact support.
+          </p>
+          <Button
+            onClick={handleGoToLogin}
+            variant="ghost"
+            className="text-blue-600 hover:text-blue-700"
+          >
+            <ArrowRight className="w-4 h-4 mr-2" />
+            Back to Login
+          </Button>
+        </div>
       </div>
     </AuthLayout>
   );

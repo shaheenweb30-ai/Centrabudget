@@ -4,6 +4,6 @@ export const getAuthRedirectUrl = (path: string = '/dashboard') => {
   return `${baseUrl}${path}`;
 };
 
-export const getEmailRedirectUrl = () => {
-  return getAuthRedirectUrl('/dashboard');
+export const getEmailRedirectUrl = (path: string = '/dashboard') => {
+  return getAuthRedirectUrl(path);
 };
