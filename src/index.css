@@ -1,0 +1,661 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="rtl"] .rtl\:text-right {
+  text-align: right;
+}
+
+[dir="rtl"] .rtl\:text-left {
+  text-align: left;
+}
+
+[dir="rtl"] .rtl\:flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .rtl\:mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .rtl\:ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+[dir="rtl"] .rtl\:mr-3 {
+  margin-right: 0;
+  margin-left: 0.75rem;
+}
+
+[dir="rtl"] .rtl\:ml-3 {
+  margin-left: 0;
+  margin-right: 0.75rem;
+}
+
+[dir="rtl"] .rtl\:mr-4 {
+  margin-right: 0;
+  margin-left: 1rem;
+}
+
+[dir="rtl"] .rtl\:ml-4 {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .rtl\:pr-4 {
+  padding-right: 0;
+  padding-left: 1rem;
+}
+
+[dir="rtl"] .rtl\:pl-4 {
+  padding-left: 0;
+  padding-right: 1rem;
+}
+
+[dir="rtl"] .rtl\:border-l {
+  border-left: 1px solid;
+  border-right: none;
+}
+
+[dir="rtl"] .rtl\:border-r-0 {
+  border-right: none;
+}
+
+[dir="rtl"] .rtl\:space-x-reverse > * + * {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Arabic font support */
+[dir="rtl"] {
+  font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Turkish font support */
+[lang="tr"] {
+  font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222.2 84% 4.9%;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
+  --sidebar: 222.2 84% 4.9%;
+  --sidebar-foreground: 210 40% 98%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-weight: 400;
+  }
+  
+  /* Typography styles matching GT Walsheim Pro specifications */
+  .text-h1 {
+    font-size: 80px;
+    line-height: 92px;
+    font-weight: 300; /* Book */
+    letter-spacing: -0.02em;
+  }
+  
+  .text-h2 {
+    font-size: 64px;
+    line-height: 72px;
+    font-weight: 300; /* Book */
+    letter-spacing: -0.05em;
+  }
+  
+  .text-h3 {
+    font-size: 50px;
+    line-height: 56px;
+    font-weight: 300; /* Book */
+    letter-spacing: -0.02em;
+  }
+  
+  .text-h4 {
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 300; /* Book */
+    letter-spacing: -0.01em;
+  }
+  
+  .text-h5 {
+    font-size: 24px;
+    line-height: 28px;
+    font-weight: 400; /* Regular */
+    letter-spacing: 0em;
+  }
+  
+  .text-body1 {
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 400; /* Regular */
+    letter-spacing: -0.02em;
+  }
+  
+  .text-body2 {
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 400; /* Regular */
+    letter-spacing: 0.01em;
+  }
+  
+  .text-caption {
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: 300; /* Book */
+    letter-spacing: 0em;
+  }
+  
+  /* Mobile-first responsive typography adjustments */
+  @media (max-width: 480px) {
+    .text-h1 {
+      font-size: 48px;
+      line-height: 56px;
+    }
+    
+    .text-h2 {
+      font-size: 36px;
+      line-height: 42px;
+    }
+    
+    .text-h3 {
+      font-size: 28px;
+      line-height: 32px;
+    }
+    
+    .text-h4 {
+      font-size: 24px;
+      line-height: 28px;
+    }
+    
+    .text-h5 {
+      font-size: 20px;
+      line-height: 24px;
+    }
+    
+    .text-body1 {
+      font-size: 16px;
+      line-height: 22px;
+    }
+    
+    .text-body2 {
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .text-h1 {
+      font-size: 56px;
+      line-height: 64px;
+    }
+    
+    .text-h2 {
+      font-size: 42px;
+      line-height: 48px;
+    }
+    
+    .text-h3 {
+      font-size: 32px;
+      line-height: 36px;
+    }
+    
+    .text-h4 {
+      font-size: 28px;
+      line-height: 32px;
+    }
+    
+    .text-h5 {
+      font-size: 22px;
+      line-height: 26px;
+    }
+  }
+  
+  @media (max-width: 1024px) {
+    .text-h1 {
+      font-size: 64px;
+      line-height: 72px;
+    }
+    
+    .text-h2 {
+      font-size: 48px;
+      line-height: 54px;
+    }
+    
+    .text-h3 {
+      font-size: 36px;
+      line-height: 40px;
+    }
+  }
+}
+
+/* Mobile-first responsive utilities */
+@layer utilities {
+  /* Touch-friendly button sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile-optimized spacing */
+  .mobile-padding {
+    @apply px-4 py-6;
+  }
+  
+  .mobile-padding-lg {
+    @apply px-6 py-8;
+  }
+  
+  /* Mobile-optimized shadows */
+  .mobile-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-shadow-lg {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Mobile-optimized transitions */
+  .mobile-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Mobile-optimized focus states */
+  .mobile-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+  
+  /* Mobile-optimized hover states */
+  .mobile-hover {
+    @apply hover:scale-105 active:scale-95;
+  }
+  
+  /* Mobile-optimized text sizes */
+  .mobile-text-xs {
+    @apply text-xs leading-4;
+  }
+  
+  .mobile-text-sm {
+    @apply text-sm leading-5;
+  }
+  
+  .mobile-text-base {
+    @apply text-base leading-6;
+  }
+  
+  .mobile-text-lg {
+    @apply text-lg leading-7;
+  }
+  
+  .mobile-text-xl {
+    @apply text-xl leading-8;
+  }
+  
+  .mobile-text-2xl {
+    @apply text-2xl leading-9;
+  }
+  
+  .mobile-text-3xl {
+    @apply text-3xl leading-10;
+  }
+  
+  .mobile-text-4xl {
+    @apply text-4xl leading-tight;
+  }
+  
+  .mobile-text-5xl {
+    @apply text-5xl leading-tight;
+  }
+  
+  /* Mobile-optimized grid layouts */
+  .mobile-grid-1 {
+    @apply grid-cols-1;
+  }
+  
+  .mobile-grid-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+  
+  .mobile-grid-3 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  .mobile-grid-4 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+  
+  /* Mobile-optimized flex layouts */
+  .mobile-flex-col {
+    @apply flex-col sm:flex-row;
+  }
+  
+  .mobile-flex-row {
+    @apply flex-row sm:flex-col;
+  }
+  
+  /* Mobile-optimized spacing */
+  .mobile-space-y {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+  
+  .mobile-space-x {
+    @apply space-x-4 sm:space-x-6 lg:space-x-8;
+  }
+  
+  /* Mobile-optimized margins */
+  .mobile-margin {
+    @apply m-4 sm:m-6 lg:m-8;
+  }
+  
+  .mobile-margin-y {
+    @apply my-4 sm:my-6 lg:my-8;
+  }
+  
+  .mobile-margin-x {
+    @apply mx-4 sm:mx-6 lg:mx-8;
+  }
+  
+  /* Mobile-optimized padding */
+  .mobile-padding {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  .mobile-padding-y {
+    @apply py-4 sm:py-6 lg:py-8;
+  }
+  
+  .mobile-padding-x {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 480px) {
+  /* Ensure minimum touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Optimize form elements for mobile */
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Optimize spacing for small screens */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 481px) and (max-width: 1024px) {
+  /* Optimize for tablet landscape and portrait */
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* Desktop-specific optimizations */
+@media (min-width: 1025px) {
+  /* Optimize for larger screens */
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* High-DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Ensure crisp rendering on high-DPI displays */
+  img, svg {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Print styles */
+@media print {
+  /* Hide non-essential elements when printing */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Optimize text for print */
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+  
+  /* Ensure good contrast for print */
+  * {
+    color: black !important;
+    background: white !important;
+  }
+}
+
+/* Sidebar collapsed state styling */
+[data-state="collapsed"] .sidebar-content {
+  opacity: 0.7;
+  transition: opacity 0.2s ease-in-out;
+}
+
+[data-state="collapsed"] .sidebar-content:hover {
+  opacity: 1;
+}
+
+/* Enhanced Sidebar Toggle Button Styling */
+.sidebar-toggle-button {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.sidebar-toggle-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-toggle-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Clean sidebar header - no background elements */
+[data-sidebar="header"] {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+[data-sidebar="header"] * {
+  background: transparent !important;
+}
+
+/* Ensure logo area is clean */
+.sidebar-logo-container {
+  background: transparent !important;
+  position: relative;
+  z-index: 10;
+}
+
+/* Remove any default sidebar backgrounds */
+[data-sidebar="sidebar"] {
+  background: hsl(var(--sidebar)) !important;
+}
+
+[data-sidebar="sidebar"] [data-sidebar="header"] {
+  background: transparent !important;
+}
+
+/* Override any default shadcn/ui sidebar header styles */
+.sidebar-header,
+[data-sidebar="header"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Ensure no pseudo-elements have backgrounds */
+[data-sidebar="header"]::before,
+[data-sidebar="header"]::after {
+  display: none !important;
+}
+
+/* Clean up any inherited backgrounds */
+[data-sidebar="header"] > div {
+  background: transparent !important;
+}
+
+/* Enhanced Sidebar Active State Styling */
+[data-sidebar="menu-button"][data-active="true"] {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3) !important;
+  transform: translateX(4px) !important;
+  position: relative !important;
+}
+
+[data-sidebar="menu-button"][data-active="true"]::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 20px;
+  background: hsl(var(--primary));
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.5);
+}
+
+[data-sidebar="menu-button"][data-active="true"]:hover {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%) !important;
+  transform: translateX(6px) !important;
+  box-shadow: 0 6px 16px hsl(var(--primary) / 0.4) !important;
+}
+
+/* Active state for sidebar menu items */
+[data-sidebar="menu-item"] [data-sidebar="menu-button"][data-active="true"] {
+  border-radius: 8px !important;
+  margin-left: 4px !important;
+  margin-right: 4px !important;
+}
+
+/* Active state icon styling */
+[data-sidebar="menu-button"][data-active="true"] svg {
+  color: hsl(var(--primary-foreground)) !important;
+  filter: drop-shadow(0 0 4px hsl(var(--primary-foreground) / 0.5));
+}
+
+/* Active state text styling */
+[data-sidebar="menu-button"][data-active="true"] span {
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 8px hsl(var(--primary-foreground) / 0.3);
+}
+
+/* Hover effects for non-active items */
+[data-sidebar="menu-button"]:not([data-active="true"]):hover {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  transform: translateX(2px) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Sidebar group labels with active state context */
+[data-sidebar="menu-button"][data-active="true"] ~ [data-sidebar="group-label"] {
+  color: hsl(var(--primary)) !important;
+  font-weight: 600 !important;
+}
+
+/* Enhanced sidebar menu button transitions */
+[data-sidebar="menu-button"] {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Active state ripple effect */
+[data-sidebar="menu-button"][data-active="true"]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%);
+  animation: activeRipple 2s ease-in-out infinite;
+}
+
+@keyframes activeRipple {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
