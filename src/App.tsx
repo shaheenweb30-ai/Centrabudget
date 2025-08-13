@@ -6,6 +6,8 @@ import { BrandingProvider } from "@/contexts/BrandingContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
 import { PricingProvider } from "@/contexts/PricingContext";
+import { PackageDescriptionsProvider } from "@/contexts/PackageDescriptionsContext";
+import { PlanFeaturesProvider } from "@/contexts/PlanFeaturesContext";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/react";
@@ -47,6 +49,8 @@ import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTranslations from "./pages/admin/AdminTranslations";
 import AdminPricing from "./pages/admin/AdminPricing";
+import AdminPackageDescriptions from "./pages/admin/AdminPackageDescriptions";
+import AdminPlanFeatures from "./pages/admin/AdminPlanFeatures";
 
 // Import new auth pages
 import { 
@@ -149,11 +153,13 @@ const AppContent = () => {
             <SettingsProvider>
               <TransactionProvider>
                 <PricingProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    {import.meta.env.PROD && <Analytics />}
-                    <ScrollToTop />
-                    <Routes>
+                  <PackageDescriptionsProvider>
+                    <PlanFeaturesProvider>
+                      <TooltipProvider>
+                      <Toaster />
+                      {import.meta.env.PROD && <Analytics />}
+                      <ScrollToTop />
+                      <Routes>
                   <Route path="/" element={<Homepage1 />} />
                   <Route path="/features" element={<Features />} />
                   <Route path="/pricing" element={<Pricing />} />
@@ -229,11 +235,15 @@ const AppContent = () => {
                   <Route path="/admin/users" element={<AdminUsers />} />
                   <Route path="/admin/translations" element={<AdminTranslations />} />
                   <Route path="/admin/pricing" element={<AdminPricing />} />
+                  <Route path="/admin/package-descriptions" element={<AdminPackageDescriptions />} />
+                  <Route path="/admin/plan-features" element={<AdminPlanFeatures />} />
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                  </TooltipProvider>
-                </PricingProvider>
+                        </TooltipProvider>
+                      </PlanFeaturesProvider>
+                    </PackageDescriptionsProvider>
+                  </PricingProvider>
               </TransactionProvider>
             </SettingsProvider>
           </BrowserRouter>

@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
+import { usePackageDescriptions } from '@/contexts/PackageDescriptionsContext';
+import { usePlanFeatures } from '@/contexts/PlanFeaturesContext';
 import Layout from '@/components/Layout';
 
 const Pricing: React.FC = () => {
@@ -33,34 +35,57 @@ const Pricing: React.FC = () => {
   };
 
   const { plans: pricingPlans } = usePricing();
+  const { descriptions: packageDescriptions, isLoading: descriptionsLoading } = usePackageDescriptions();
+  const { getFeaturesByPlanId, isLoading: featuresLoading } = usePlanFeatures();
   
   // Transform pricing plans to match the expected format
-  const plans = pricingPlans.map(plan => ({
-    name: plan.name,
-    subtitle: plan.subtitle,
-    description: plan.description,
-    price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? plan.yearlyPrice! : plan.monthlyPrice!),
-    period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
-    buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
-    buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
-    disabled: plan.id === 'free' ? (user && isFreePlan) : false,
-    popular: plan.popular || false,
-    features: plan.id === 'free' ? [
-      { text: `${limits.categories} categories per month`, included: true },
-      { text: `${limits.budgets} budgets per month`, included: true },
-      { text: `${limits.transactions} transactions per month`, included: true },
-      { text: `${limits.aiInsights} AI insights per month`, included: true },
-      { text: 'Basic recurring detection', included: true },
-      { text: 'Monthly budget periods', included: true },
-      { text: 'Community support', included: true },
-      { text: 'Mobile app access', included: true },
-      { text: 'Basic reports', included: true },
-      { text: 'Export to CSV', included: true }
-    ] : plan.features.map(feature => ({ text: feature, included: true })),
-    icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
-          plan.id === 'pro' ? <Zap className="w-6 h-6" /> : 
-          <Users className="w-6 h-6" />
-  }));
+  const plans = pricingPlans.map(plan => {
+    // Get the configurable description for this plan
+    const configDescription = packageDescriptions.find(desc => desc.plan_id === plan.id);
+    const description = configDescription && configDescription.is_enabled 
+      ? configDescription.description 
+      : plan.description;
+    
+    // Get configurable features for this plan
+    const configFeatures = getFeaturesByPlanId(plan.id);
+    
+    // Use configurable features if available, otherwise fall back to defaults
+    let features;
+    if (configFeatures.length > 0) {
+      features = configFeatures.map(feature => ({ text: feature.feature_text, included: true }));
+    } else if (plan.id === 'free') {
+      features = [
+        { text: `${limits.categories} categories per month`, included: true },
+        { text: `${limits.budgets} budgets per month`, included: true },
+        { text: `${limits.transactions} transactions per month`, included: true },
+        { text: `${limits.aiInsights} AI insights per month`, included: true },
+        { text: 'Basic recurring detection', included: true },
+        { text: 'Monthly budget periods', included: true },
+        { text: 'Community support', included: true },
+        { text: 'Mobile app access', included: true },
+        { text: 'Basic reports', included: true },
+        { text: 'Export to CSV', included: true }
+      ];
+    } else {
+      features = plan.features.map(feature => ({ text: feature, included: true }));
+    }
+    
+    return {
+      name: plan.name,
+      subtitle: plan.subtitle,
+      description: description,
+      price: plan.isCustomPricing ? null : (billingCycle === 'yearly' ? plan.yearlyPrice! : plan.monthlyPrice!),
+      period: plan.isCustomPricing ? plan.customPricingText || 'Contact Us' : (billingCycle === 'yearly' ? 'year' : 'month'),
+      buttonText: plan.id === 'free' ? (user ? 'Current Plan' : 'Get Started Free') : plan.buttonText,
+      buttonVariant: plan.id === 'free' ? (user ? 'outline' : 'default') : plan.buttonVariant,
+      disabled: plan.id === 'free' ? (user && isFreePlan) : false,
+      popular: plan.popular || false,
+      features: features,
+      icon: plan.id === 'free' ? <Star className="w-6 h-6" /> : 
+            plan.id === 'pro' ? <Zap className="w-6 h-6" /> : 
+            <Users className="w-6 h-6" />
+    };
+  });
 
   const faqs = [
     {

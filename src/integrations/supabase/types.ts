@@ -671,6 +671,69 @@ export type Database = {
         }
         Relationships: []
       }
+      package_descriptions: {
+        Row: {
+          id: string
+          plan_id: string
+          description: string
+          is_enabled: boolean
+          created_at: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          plan_id: string
+          description: string
+          is_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          plan_id?: string
+          description?: string
+          is_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      plan_features: {
+        Row: {
+          id: string
+          plan_id: string
+          feature_text: string
+          display_order: number
+          is_enabled: boolean
+          created_at: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          plan_id: string
+          feature_text: string
+          display_order?: number
+          is_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          plan_id?: string
+          feature_text?: string
+          display_order?: number
+          is_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
