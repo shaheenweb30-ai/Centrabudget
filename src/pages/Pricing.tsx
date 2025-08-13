@@ -8,12 +8,14 @@ import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
 import { usePackageDescriptions } from '@/contexts/PackageDescriptionsContext';
 import { usePlanFeatures } from '@/contexts/PlanFeaturesContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import Layout from '@/components/Layout';
 
 const Pricing: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
+  const { formatCurrency } = useSettings();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedFeatures, setExpandedFeatures] = useState<string[]>([]);
 
@@ -253,7 +255,7 @@ const Pricing: React.FC = () => {
                         <div className="flex items-baseline justify-center">
                                           {plan.price !== null ? (
                   <>
-                    <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                    <span className="text-4xl font-bold text-gray-900">{formatCurrency(plan.price)}</span>
                     <span className="text-lg text-gray-500 ml-2">/{plan.period}</span>
                   </>
                 ) : (

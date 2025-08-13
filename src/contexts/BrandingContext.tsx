@@ -47,8 +47,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
       const { data, error } = await supabase
         .from('branding_settings')
         .select('*')
-        .limit(1)
-        .single();
+        .limit(1);
 
       if (error) {
         console.error('Error fetching branding settings:', error);
@@ -76,11 +75,45 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
         // For other errors, still set loading to false
         setSettings(null);
       } else {
-        setSettings(data);
+        // Handle case where no branding settings exist
+        if (data && data.length > 0) {
+          setSettings(data[0]);
+        } else {
+          // No branding settings found, use defaults
+          console.log('No branding settings found, using defaults');
+          setSettings({
+            id: 'default',
+            business_name: 'CentraBudget',
+            logo_url: null,
+            favicon_url: null,
+            primary_color: '#1752F3',
+            secondary_color: '#F0F0F0',
+            accent_color: '#4A90E2',
+            font_family: 'GT Walsheim Pro',
+            font_weights: '["300", "400", "500", "600", "700"]',
+            typography_settings: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching branding settings:', error);
-      setSettings(null);
+      // Use default settings on error
+      setSettings({
+        id: 'default',
+        business_name: 'CentraBudget',
+        logo_url: null,
+        favicon_url: null,
+        primary_color: '#1752F3',
+        secondary_color: '#F0F0F0',
+        accent_color: '#4A90E2',
+        font_family: 'GT Walsheim Pro',
+        font_weights: '["300", "400", "500", "600", "700"]',
+        typography_settings: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
     } finally {
       setLoading(false);
     }
@@ -98,15 +131,18 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
         .from('branding_settings')
         .update(updates)
         .eq('id', settings.id)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         throw error;
       }
 
-      setSettings(data);
-      return data;
+      if (data && data.length > 0) {
+        setSettings(data[0]);
+        return data[0];
+      } else {
+        throw new Error('No settings found to update');
+      }
     } catch (error) {
       console.error('Error updating branding settings:', error);
       throw error;

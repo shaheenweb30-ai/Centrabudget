@@ -24,6 +24,7 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,6 +49,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { formatCurrency } = useSettings();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
@@ -246,7 +248,7 @@ const Checkout = () => {
                       Yearly
                       {selectedPlan === 'yearly' && (
                         <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs">
-                          Save ${yearlySavings}
+                          Save {formatCurrency(yearlySavings)}
                         </Badge>
                       )}
                     </Button>
@@ -254,15 +256,15 @@ const Checkout = () => {
                   
                   <div className="text-center p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
                     <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">
-                      ${currentPlan?.price}
+                      {formatCurrency(currentPlan?.price || 0)}
                     </div>
                     <div className="text-slate-600 dark:text-slate-400">
                       per {selectedPlan === 'monthly' ? 'month' : 'year'}
                     </div>
                     {selectedPlan === 'yearly' && (
-                      <div className="text-sm text-green-600 dark:text-green-400 mt-1">
-                        Save ${yearlySavings} annually
-                      </div>
+                                              <div className="text-sm text-green-600 dark:text-green-400 mt-1">
+                          Save {formatCurrency(yearlySavings)} annually
+                        </div>
                     )}
                   </div>
                 </CardContent>
@@ -389,7 +391,7 @@ const Checkout = () => {
                           Processing...
                         </div>
                       ) : (
-                        `Subscribe for $${currentPlan?.price}/${selectedPlan === 'monthly' ? 'month' : 'year'}`
+                        `Subscribe for ${formatCurrency(currentPlan?.price || 0)}/${selectedPlan === 'monthly' ? 'month' : 'year'}`
                       )}
                     </Button>
                   </form>
@@ -411,20 +413,20 @@ const Checkout = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-600 dark:text-slate-400">Pro Plan ({selectedPlan})</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        ${currentPlan?.price}
+                        {formatCurrency(currentPlan?.price || 0)}
                       </span>
                     </div>
                     {selectedPlan === 'yearly' && (
                       <div className="flex justify-between items-center text-green-600 dark:text-green-400">
                         <span>Annual Savings</span>
-                        <span>-${yearlySavings}</span>
+                        <span>-{formatCurrency(yearlySavings)}</span>
                       </div>
                     )}
                     <div className="border-t border-slate-200 dark:border-slate-600 pt-3">
                       <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total</span>
                         <span className="text-blue-600 dark:text-blue-400">
-                          ${selectedPlan === 'yearly' ? (currentPlan?.price || 0) - yearlySavings : currentPlan?.price}
+                          {formatCurrency(selectedPlan === 'yearly' ? (currentPlan?.price || 0) - yearlySavings : (currentPlan?.price || 0))}
                         </span>
                       </div>
                       <div className="text-sm text-slate-500 dark:text-slate-400">

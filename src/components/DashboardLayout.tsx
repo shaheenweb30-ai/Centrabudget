@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useTranslation } from "react-i18next";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { Logo } from "./Logo";
 import {
@@ -33,9 +34,6 @@ import {
   User,
   HelpCircle,
   Package,
-  Palette,
-  Image,
-  FileCode,
   Users,
   LogOut,
   TrendingUp,
@@ -59,11 +57,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const { isAdmin } = useUserRole(user);
+  const { currentPlan, isLoading: planLoading } = useUserPlan();
   const { isMobile } = useResponsive();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Show loading state while auth is initializing
-  if (authLoading) {
+  // Show loading state while auth or plan is initializing
+  if (authLoading || planLoading) {
     return <div>Loading...</div>;
   }
 
@@ -115,8 +114,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Subscription", href: "/subscription", icon: Package },
   ];
 
-  // Add upgrade option for free plan users
-  const upgradeNavigation = user ? [
+  // Add upgrade option for free plan users only
+  const upgradeNavigation = user && currentPlan && currentPlan === 'free' ? [
     { name: "Upgrade to Pro", href: "/checkout?plan=pro", icon: Crown, highlight: true }
   ] : [];
 
@@ -124,24 +123,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
-  const adminNavigation = [
-    { name: "Page Management", href: "/admin/pages", icon: FileCode },
-    { name: "Branding & Theme", href: "/admin/branding", icon: Palette },
-    { name: "Image Gallery", href: "/admin/images", icon: Image },
-    { name: "Footer Links", href: "/admin/footer", icon: FileText },
-    { name: "FAQ Management", href: "/admin/faq", icon: HelpCircle },
-    { name: "Package Descriptions", href: "/admin/package-descriptions", icon: Package },
-    { name: "Plan Features", href: "/admin/plan-features", icon: Settings },
-  ];
-
   const administrationNavigation = [
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Form Submissions", href: "/settings?tab=admin", icon: MessageSquare },
     { name: "Newsletter Subscribers", href: "/settings?tab=newsletter", icon: Mail },
-    { name: "Comparison Configurator", href: "/admin/comparison", icon: FileText },
     { name: "Pricing Management", href: "/admin/pricing", icon: DollarSign },
+    { name: "Package Descriptions", href: "/admin/package-descriptions", icon: Package },
+    { name: "Plan Features", href: "/admin/plan-features", icon: Settings },
   ];
-  const isAdminPage = location.pathname.startsWith('/admin');
+
 
   return (
     <div className={dashboardClassName}>
@@ -236,9 +226,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                             <span className="inline">{item.name}</span>
                           </Link>
                         </SidebarMenuButton>
-                        {item.href === '/subscription' && user && (
-                          <SidebarMenuBadge className={`text-xs px-2 py-1 bg-slate-200 text-slate-700`}>
-                            Free Plan
+                        {item.href === '/subscription' && user && currentPlan && (
+                          <SidebarMenuBadge className={`text-xs px-2 py-1 ${
+                            currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro'
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
+                              : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {currentPlan === 'admin_pro' ? 'Admin Pro' : 
+                             currentPlan === 'admin' ? 'Admin Plan' : 
+                             currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
                           </SidebarMenuBadge>
                         )}
                       </SidebarMenuItem>
@@ -335,34 +331,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </SidebarGroup>
             )}
 
-            {isAdmin && isAdminPage && (
-              <SidebarGroup>
-                <SidebarGroupLabel className={`text-xs sm:text-sm font-medium px-2 py-1 transition-colors duration-200 ${
-                  adminNavigation.some(item => isActive(item.href)) 
-                    ? 'text-primary font-semibold' 
-                    : 'text-muted-foreground'
-                }`}>
-                  Admin
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {                    adminNavigation.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <SidebarMenuItem key={item.name}>
-                          <SidebarMenuButton asChild isActive={isActive(item.href)} className="text-sm sm:text-base">
-                            <Link to={item.href}>
-                              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="inline">{item.name}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
+
           </SidebarContent>
           <SidebarFooter className="border-t border-border px-2 py-2">
             <div className="flex items-center gap-2">
@@ -453,9 +422,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         >
                           <item.icon className="h-4 w-4" />
                           {item.name}
-                          {item.href === '/subscription' && user && (
-                            <span className={`ml-auto text-xs px-2 py-1 rounded-full bg-slate-200 text-slate-700`}>
-                              Free Plan
+                          {item.href === '/subscription' && user && currentPlan && (
+                            <span className={`ml-auto text-xs px-2 py-1 rounded-full ${
+                              currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro'
+                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
+                                : 'bg-slate-500 text-white'
+                            }`}>
+                              {currentPlan === 'admin_pro' ? 'Admin Pro' : 
+                               currentPlan === 'admin' ? 'Admin Plan' : 
+                               currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
                             </span>
                           )}
                         </Link>
@@ -522,26 +497,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                       </div>
                     )}
                     
-                    {isAdmin && isAdminPage && (
-                      <div className="space-y-1">
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider px-2 py-1">Admin</div>
-                        {adminNavigation.map((item) => (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                              isActive(item.href)
-                                ? 'text-primary bg-primary/10 border border-primary/20'
-                                : 'text-gray-700 hover:bg-gray-100/80 active:bg-gray-200/80'
-                            }`}
-                          >
-                            <item.icon className="h-4 w-4" />
-                            {item.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+
                   </div>
                 </div>
               )}

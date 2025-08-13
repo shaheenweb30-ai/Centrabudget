@@ -41,11 +41,6 @@ import Checkout from "./pages/Checkout";
 
 import Reports from "./pages/Reports";
 
-import AdminPages from "./pages/admin/AdminPages";
-import AdminBranding from "./pages/admin/AdminBranding";
-import AdminImages from "./pages/admin/AdminImages";
-import AdminFooter from "./pages/admin/AdminFooter";
-import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTranslations from "./pages/admin/AdminTranslations";
 import AdminPricing from "./pages/admin/AdminPricing";
@@ -227,11 +222,6 @@ const AppContent = () => {
                    <Route path="/terms" element={<Terms />} />
                   
                   {/* Admin Routes */}
-                  <Route path="/admin/pages" element={<AdminPages />} />
-                  <Route path="/admin/branding" element={<AdminBranding />} />
-                  <Route path="/admin/images" element={<AdminImages />} />
-                  <Route path="/admin/footer" element={<AdminFooter />} />
-                  <Route path="/admin/faq" element={<AdminFAQ />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
                   <Route path="/admin/translations" element={<AdminTranslations />} />
                   <Route path="/admin/pricing" element={<AdminPricing />} />

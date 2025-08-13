@@ -27,6 +27,7 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useUserPlan } from "@/hooks/useUserPlan";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("preferences");
@@ -40,9 +41,58 @@ export default function Settings() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { preferences, updatePreferences } = useSettings();
+  const { currentPlan, isLoading: planLoading } = useUserPlan();
 
-  // Safety check - ensure preferences exist
-  if (!preferences) {
+  // All hooks must be called before any conditional returns
+  const [preferencesForm, setPreferencesForm] = useState({
+    currency: preferences?.currency || 'USD',
+    budgetPeriod: (preferences?.budgetPeriod ?? 'monthly') as 'monthly' | 'quarterly' | 'yearly',
+    dateFormat: preferences?.dateFormat || 'MM/DD/YYYY',
+    timeFormat: preferences?.timeFormat || '12h' as '12h' | '24h'
+  });
+
+  const [currencySearchTerm, setCurrencySearchTerm] = useState("");
+
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['preferences', 'billing', 'admin'].includes(tabParam)) {
+      setActiveTab(tabParam as 'preferences' | 'billing' | 'admin');
+    } else if (tabParam && tabParam === 'profile') {
+      // Redirect invalid profile tab to preferences
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('tab', 'preferences');
+      window.history.replaceState({}, '', newUrl.toString());
+      setActiveTab('preferences');
+    }
+  }, []);
+
+  // Load user preferences
+  useEffect(() => {
+    try {
+      if (preferences) {
+        setPreferencesForm({
+          currency: preferences.currency || 'USD',
+          budgetPeriod: preferences.budgetPeriod || 'monthly',
+          dateFormat: preferences.dateFormat || 'MM/DD/YYYY',
+          timeFormat: preferences.timeFormat || '12h'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      // Set default values if there's an error
+      setPreferencesForm({
+        currency: 'USD',
+        budgetPeriod: 'monthly',
+        dateFormat: 'MM/DD/YYYY',
+        timeFormat: '12h'
+      });
+    }
+  }, [preferences]);
+
+  // Safety check - ensure preferences and plan data exist
+  if (!preferences || planLoading) {
     return (
       <DashboardLayout>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/20 dark:to-purple-950/20 p-4 sm:p-6">
@@ -52,24 +102,13 @@ export default function Settings() {
                 <SettingsIcon className="w-8 h-8 text-slate-400" />
               </div>
               <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">Loading Settings</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-4">Please wait while we load your settings...</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">Please wait while we load your settings and plan information...</p>
             </div>
           </div>
         </div>
       </DashboardLayout>
     );
   }
-
-
-
-  const [preferencesForm, setPreferencesForm] = useState({
-    currency: preferences?.currency || 'USD',
-    budgetPeriod: (preferences?.budgetPeriod ?? 'monthly') as 'monthly' | 'quarterly' | 'yearly',
-    dateFormat: preferences?.dateFormat || 'MM/DD/YYYY',
-    timeFormat: preferences?.timeFormat || '12h' as '12h' | '24h'
-  });
-
-  const [currencySearchTerm, setCurrencySearchTerm] = useState("");
   
   // Comprehensive list of world currencies
   const allCurrencies = [
@@ -165,44 +204,6 @@ export default function Settings() {
     { code: 'TVD', name: 'Tuvaluan Dollar', symbol: '$' },
     { code: 'ZWL', name: 'Zimbabwean Dollar', symbol: '$' }
   ];
-
-  // Handle tab parameter from URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    if (tabParam && ['preferences', 'billing', 'admin'].includes(tabParam)) {
-      setActiveTab(tabParam as 'preferences' | 'billing' | 'admin');
-    } else if (tabParam && tabParam === 'profile') {
-      // Redirect invalid profile tab to preferences
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('tab', 'preferences');
-      window.history.replaceState({}, '', newUrl.toString());
-      setActiveTab('preferences');
-    }
-  }, []);
-
-  // Load user preferences
-  useEffect(() => {
-    try {
-      if (preferences) {
-        setPreferencesForm({
-          currency: preferences.currency || 'USD',
-          budgetPeriod: preferences.budgetPeriod || 'monthly',
-          dateFormat: preferences.dateFormat || 'MM/DD/YYYY',
-          timeFormat: preferences.timeFormat || '12h'
-        });
-      }
-    } catch (error) {
-      console.error('Error loading preferences:', error);
-      // Set default values if there's an error
-      setPreferencesForm({
-        currency: 'USD',
-        budgetPeriod: 'monthly',
-        dateFormat: 'MM/DD/YYYY',
-        timeFormat: '12h'
-      });
-    }
-  }, [preferences]);
 
 
 
@@ -435,12 +436,24 @@ export default function Settings() {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600 dark:text-slate-400">Plan</span>
-                            <span className="font-medium">Free Tier</span>
+                            <span className="font-medium">
+                              {planLoading ? 'Loading...' : 
+                                currentPlan === 'admin_pro' ? 'Admin Pro Plan' : 
+                                currentPlan === 'admin' ? 'Admin Plan' : 
+                                currentPlan === 'pro' ? 'Pro Plan' : 
+                                'Free Plan'
+                              }
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600 dark:text-slate-400">Status</span>
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                              Active
+                            <Badge className={
+                              currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro'
+                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
+                                : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                            }>
+                              {currentPlan === 'admin_pro' ? 'Admin Pro' : 
+                               currentPlan === 'pro' || currentPlan === 'admin' ? 'Premium' : 'Active'}
                             </Badge>
                           </div>
                         </div>
@@ -458,11 +471,27 @@ export default function Settings() {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-600 dark:text-slate-400">Transactions</span>
-                            <span className="font-medium">Unlimited</span>
+                            <span className="font-medium">
+                              {planLoading ? 'Loading...' : 
+                                currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro' ? 'Unlimited' : '10/month'
+                              }
+                            </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-sm text-slate-600 dark:text-slate-400">Storage</span>
-                            <span className="font-medium">1GB</span>
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Categories</span>
+                            <span className="font-medium">
+                              {planLoading ? 'Loading...' : 
+                                currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro' ? 'Unlimited' : '10/month'
+                              }
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">AI Insights</span>
+                            <span className="font-medium">
+                              {planLoading ? 'Loading...' : 
+                                currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro' ? 'Unlimited' : '5/month'
+                              }
+                            </span>
                           </div>
                         </div>
                       </CardContent>
@@ -470,14 +499,22 @@ export default function Settings() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="outline" className="rounded-full">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Upgrade Plan
-                    </Button>
-                    <Button variant="outline" className="rounded-full">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download Invoice
-                    </Button>
+                    {currentPlan === 'free' && (
+                      <Button 
+                        variant="outline" 
+                        className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600"
+                        onClick={() => navigate('/checkout?plan=pro')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Upgrade to Pro
+                      </Button>
+                    )}
+                    {(currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro') && (
+                      <Button variant="outline" className="rounded-full">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Invoice
+                      </Button>
+                    )}
                   </div>
                 </TabsContent>
 

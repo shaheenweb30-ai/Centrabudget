@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface PricingCardsProps {
   showComparison?: boolean;
@@ -22,6 +23,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
   const { plans: pricingPlans } = usePricing();
+  const { formatCurrency } = useSettings();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   // Transform pricing plans to match the expected format
@@ -83,7 +85,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
           {(() => {
             const proPlan = pricingPlans.find(p => p.id === 'pro');
             if (proPlan && proPlan.monthlyPrice && proPlan.yearlyPrice) {
-              const savings = ((proPlan.monthlyPrice * 12 - proPlan.yearlyPrice) / (proPlan.monthlyPrice * 12) * 100).toFixed(0);
+              const savings = Math.round(((proPlan.monthlyPrice * 12 - proPlan.yearlyPrice) / (proPlan.monthlyPrice * 12) * 100));
               return (
                 <span className="ml-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                   Save {savings}%
@@ -130,7 +132,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
                 <div className="flex items-baseline justify-center">
                   {plan.price !== null ? (
                     <>
-                      <span className="text-4xl font-bold text-slate-900">${plan.price}</span>
+                      <span className="text-4xl font-bold text-slate-900">{formatCurrency(plan.price)}</span>
                       <span className="text-lg text-slate-500 ml-1">/{plan.period}</span>
                     </>
                   ) : (
@@ -139,7 +141,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
                 </div>
                 {billingCycle === 'yearly' && plan.name === 'Pro' && plan.price !== null && (
                   <p className="text-sm text-green-600 mt-1">
-                    Save ${((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12) - plan.price).toFixed(2)}/year
+                    Save {formatCurrency((pricingPlans.find(p => p.id === 'pro')?.monthlyPrice! * 12) - plan.price)}/year
                   </p>
                 )}
               </div>

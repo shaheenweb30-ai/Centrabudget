@@ -33,30 +33,11 @@ interface TransactionContextType {
 
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
 
-// Sample initial data
-const initialTransactions: Transaction[] = [
-  { id: '1', type: 'income', amount: 2500.00, category: 'Salary', description: 'Monthly salary payment', date: '2025-01-15', created_at: '2025-01-15T09:00:00Z' },
-  { id: '2', type: 'expense', amount: 120.00, category: 'Groceries', description: 'Weekly grocery shopping', date: '2025-01-14', created_at: '2025-01-14T16:30:00Z' },
-  { id: '3', type: 'expense', amount: 45.00, category: 'Dining', description: 'Lunch at restaurant', date: '2025-01-13', created_at: '2025-01-13T12:15:00Z' },
-  { id: '4', type: 'income', amount: 500.00, category: 'Freelance', description: 'Web design project', date: '2025-01-12', created_at: '2025-01-12T14:20:00Z' },
-  { id: '5', type: 'expense', amount: 89.99, category: 'Shopping', description: 'New headphones', date: '2025-01-11', created_at: '2025-01-11T10:45:00Z' },
-  { id: '6', type: 'expense', amount: 65.00, category: 'Transportation', description: 'Gas and parking', date: '2025-01-10', created_at: '2025-01-10T08:30:00Z' },
-  { id: '7', type: 'expense', amount: 75.00, category: 'Gym Membership', description: 'Monthly gym fee', date: '2025-01-09', created_at: '2025-01-09T08:00:00Z' },
-  { id: '8', type: 'expense', amount: 120.00, category: 'Pet Care', description: 'Vet visit and supplies', date: '2025-01-08', created_at: '2025-01-08T14:30:00Z' },
-  { id: '9', type: 'expense', amount: 45.00, category: 'Hobby Expenses', description: 'Art supplies', date: '2025-01-07', created_at: '2025-01-07T16:45:00Z' },
-];
+// Start with empty data for new users
+const initialTransactions: Transaction[] = [];
 
-// Predefined categories with default budgets
-const predefinedCategories = [
-  { name: 'Food & Dining', icon: '🍔', color: '#10B981', defaultBudget: 500 },
-  { name: 'Transportation', icon: '🚗', color: '#3B82F6', defaultBudget: 300 },
-  { name: 'Entertainment', icon: '🎬', color: '#8B5CF6', defaultBudget: 200 },
-  { name: 'Shopping', icon: '🛍️', color: '#F59E0B', defaultBudget: 400 },
-  { name: 'Groceries', icon: '🛒', color: '#84CC16', defaultBudget: 400 },
-  { name: 'Dining', icon: '🍽️', color: '#F97316', defaultBudget: 300 },
-  { name: 'Salary', icon: '💰', color: '#10B981', defaultBudget: 0 },
-  { name: 'Freelance', icon: '💼', color: '#06B6D4', defaultBudget: 0 },
-];
+// Start with empty predefined categories for new users
+const predefinedCategories: Array<{ name: string; icon: string; color: string; defaultBudget: number }> = [];
 
 // Generate random colors for custom categories
 const generateColor = (categoryName: string) => {

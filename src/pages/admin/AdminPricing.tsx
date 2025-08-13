@@ -20,11 +20,13 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { usePricing } from "@/contexts/PricingContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/contexts/SettingsContext";
 
 const AdminPricing = () => {
   const { plans, pricingConfig, isLoading, updatePricing, refreshPricing } = usePricing();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatCurrency } = useSettings();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     monthlyPrice: 0,
@@ -189,7 +191,7 @@ const AdminPricing = () => {
                     ) : (
                       <>
                         <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                          ${plan.monthlyPrice}
+                          {formatCurrency(plan.monthlyPrice)}
                         </div>
                         <div className="text-slate-600 dark:text-slate-400 text-sm">
                           per month
@@ -197,11 +199,11 @@ const AdminPricing = () => {
                         {plan.yearlyPrice && plan.yearlyPrice > 0 && (
                           <div className="mt-2 text-sm">
                             <div className="text-slate-600 dark:text-slate-400">
-                              ${plan.yearlyPrice} per year
+                              {formatCurrency(plan.yearlyPrice)} per year
                             </div>
-                            <div className="text-green-600 dark:text-green-400 font-medium">
-                              Save ${((plan.monthlyPrice! * 12) - plan.yearlyPrice).toFixed(2)} annually
-                            </div>
+                                                          <div className="text-green-600 dark:text-green-400 font-medium">
+                                Save {formatCurrency((plan.monthlyPrice! * 12) - plan.yearlyPrice)} annually
+                              </div>
                           </div>
                         )}
                       </>
@@ -300,7 +302,7 @@ const AdminPricing = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-slate-600 dark:text-slate-400">Yearly:</span>
                             <span className="font-medium text-slate-800 dark:text-slate-200">
-                              ${plan.yearlyPrice}
+                              {formatCurrency(plan.yearlyPrice)}
                             </span>
                           </div>
                           <Button
@@ -353,10 +355,10 @@ const AdminPricing = () => {
                              </Badge>
                            </td>
                            <td className="py-2 text-sm text-slate-600 dark:text-slate-400">
-                             ${config.monthly_price}
+                             {formatCurrency(config.monthly_price)}
                            </td>
                            <td className="py-2 text-sm text-slate-600 dark:text-slate-400">
-                             ${config.yearly_price}
+                             {formatCurrency(config.yearly_price)}
                            </td>
                            <td className="py-2 text-sm text-slate-500 dark:text-slate-400">
                              {new Date(config.updated_at).toLocaleDateString()}
@@ -382,7 +384,7 @@ const AdminPricing = () => {
                   <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
                     <div>• Monthly prices should be competitive with market rates</div>
                     <div>• Yearly prices should offer 10-20% savings to encourage annual subscriptions</div>
-                    <div>• Free plan pricing cannot be modified (always $0)</div>
+                    <div>• Free plan pricing cannot be modified (always free)</div>
                     <div>• Changes take effect immediately across all pages</div>
                     <div>• Consider user feedback and market research when adjusting prices</div>
                   </div>

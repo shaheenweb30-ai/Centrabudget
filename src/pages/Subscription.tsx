@@ -20,12 +20,14 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { useNavigate } from "react-router-dom";
 
 const Subscription = () => {
   const { user } = useAuth();
   const { isFreePlan, limits, isLoading } = useUserPlan();
   const { plans } = usePricing();
+  const { formatCurrency } = useSettings();
   const navigate = useNavigate();
   const [upgrading, setUpgrading] = useState(false);
   
@@ -328,11 +330,11 @@ const Subscription = () => {
                   <div className="text-center">
                     <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                       <div className="text-sm text-amber-700 dark:text-amber-300">
-                        Upgrade to Pro: ${monthlyPrice}/month or ${yearlyPrice}/year (one-time payment)
+                        Upgrade to Pro: {formatCurrency(monthlyPrice)}/month or {formatCurrency(yearlyPrice)}/year (one-time payment)
                       </div>
                       {yearlySavings > 0 && (
                         <div className="text-xs text-amber-600 dark:text-amber-400">
-                          Save ${yearlySavings} annually with yearly billing
+                          Save {formatCurrency(yearlySavings)} annually with yearly billing
                         </div>
                       )}
                     </div>
@@ -383,11 +385,11 @@ const Subscription = () => {
                     </p>
                     <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                       <div className="text-sm text-green-700 dark:text-green-300">
-                        Current Pricing: ${monthlyPrice}/month or ${yearlyPrice}/year (one-time payment)
+                        Current Pricing: {formatCurrency(monthlyPrice)}/month or {formatCurrency(yearlyPrice)}/year (one-time payment)
                       </div>
                       {yearlySavings > 0 && (
                         <div className="text-xs text-green-600 dark:text-green-400">
-                          Save ${yearlySavings} annually with yearly billing
+                          Save {formatCurrency(yearlySavings)} annually with yearly billing
                         </div>
                       )}
                     </div>

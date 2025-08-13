@@ -316,7 +316,7 @@ const CategoriesBudget = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  ${totalBudget.toLocaleString()}
+                  {formatCurrency(totalBudget)}
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   {getBudgetPeriodText()} budget
@@ -338,7 +338,7 @@ const CategoriesBudget = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">
-                  ${totalSpent.toLocaleString()}
+                  {formatCurrency(totalSpent)}
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   {getBudgetPeriodText()} spending
@@ -355,7 +355,7 @@ const CategoriesBudget = () => {
               </CardHeader>
               <CardContent>
                 <div className={`text-xl sm:text-2xl lg:text-3xl font-bold ${totalRemaining >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  ${totalRemaining.toLocaleString()}
+                  {formatCurrency(totalRemaining)}
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   Available to spend
@@ -397,8 +397,40 @@ const CategoriesBudget = () => {
           )}
 
           {/* Categories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {categories.map((category) => {
+          {categories.length === 0 ? (
+            <Card className="col-span-full rounded-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg border border-white/20 dark:border-slate-700/30">
+              <CardContent className="text-center py-16">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Target className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">
+                  No Categories Yet
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                  Start by creating your first category to organize your spending. Categories help you track where your money goes and set budget limits.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Button 
+                    onClick={() => setShowAddCategory(true)}
+                    className="rounded-full bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Category
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/transactions')}
+                    variant="outline"
+                    className="rounded-full border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Add Transaction
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {categories.map((category) => {
               const percentage = category.budget > 0 ? (category.spent / category.budget) * 100 : 0;
               const status = getBudgetStatus(category.spent, category.budget);
               const StatusIcon = status.icon;
@@ -498,7 +530,7 @@ const CategoriesBudget = () => {
                     
                     <div className="text-right mt-2">
                       <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
-                        ${category.spent.toLocaleString()} / ${category.budget.toLocaleString()}
+                        {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
                       </div>
                       <div className="text-xs text-slate-600 dark:text-slate-400">
                         {category.transactionCount} transaction{category.transactionCount !== 1 ? 's' : ''}
@@ -510,8 +542,8 @@ const CategoriesBudget = () => {
                       <>
                         <Progress value={percentage} className="h-2 bg-slate-200 dark:bg-slate-700" />
                         <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
-                          <span>${category.spent.toLocaleString()} spent</span>
-                          <span>${(category.budget - category.spent).toLocaleString()} remaining</span>
+                          <span>{formatCurrency(category.spent)} spent</span>
+                          <span>{formatCurrency(category.budget - category.spent)} remaining</span>
                         </div>
                         <div className="flex justify-center pt-2">
                           <Button 
@@ -555,7 +587,8 @@ const CategoriesBudget = () => {
                 </Card>
               );
             })}
-          </div>
+            </div>
+          )}
 
           {/* Add Budget Dialog */}
           <Dialog open={showAddBudget} onOpenChange={setShowAddBudget}>

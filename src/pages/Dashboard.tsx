@@ -60,6 +60,9 @@ const Dashboard = () => {
   const totalSpent = categories.reduce((sum, cat) => sum + cat.spent, 0);
   const budgetProgress = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
+  // Check if user has any data
+  const hasData = transactions.length > 0 || categories.some(cat => cat.budget > 0);
+
   // Get budget period display text
   const getBudgetPeriodText = () => {
     const period = preferences?.budgetPeriod || 'monthly';
@@ -126,13 +129,19 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(totalBalance)}
+                  {hasData ? formatCurrency(totalBalance) : '—'}
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 text-xs sm:text-sm text-green-600 dark:text-green-400">
-                    <TrendingUp className="w-2 h-2 sm:w-3 sm:h-3" />
-                    {formatCurrency(monthlyIncome - monthlyExpenses)} this {getBudgetPeriodText().toLowerCase()}
-                  </span>
+                  {hasData ? (
+                    <span className="inline-flex items-center gap-1 text-xs sm:text-sm text-green-600 dark:text-green-400">
+                      <TrendingUp className="w-2 h-2 sm:w-3 sm:h-3" />
+                      {formatCurrency(monthlyIncome - monthlyExpenses)} this {getBudgetPeriodText().toLowerCase()}
+                    </span>
+                  ) : (
+                    <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                      No data yet
+                    </span>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -147,10 +156,10 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-700 dark:text-green-400">
-                  {formatCurrency(totalIncome)}
+                  {hasData ? formatCurrency(totalIncome) : '—'}
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                  Lifetime earnings
+                  {hasData ? 'Lifetime earnings' : 'No data yet'}
                 </p>
               </CardContent>
             </Card>
@@ -165,10 +174,10 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">
-                  {formatCurrency(totalExpenses)}
+                  {hasData ? formatCurrency(totalExpenses) : '—'}
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                  Lifetime spending
+                  {hasData ? 'Lifetime spending' : 'No data yet'}
                 </p>
               </CardContent>
             </Card>
@@ -183,18 +192,26 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {formatCurrency(totalBudget)} / {formatCurrency(totalSpent)}
+                  {hasData ? `${formatCurrency(totalBudget)} / ${formatCurrency(totalSpent)}` : '—'}
                 </div>
                 <div className="mt-3">
-                  <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
-                    <div
-                      className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
-                      style={{ width: `${budgetProgress}%` }}
-                    />
-                  </div>
-                  <div className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                    {budgetProgress.toFixed(0)}% of budget spent
-                  </div>
+                  {hasData ? (
+                    <>
+                      <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
+                          style={{ width: `${budgetProgress}%` }}
+                        />
+                      </div>
+                      <div className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                        {budgetProgress.toFixed(0)}% of budget spent
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                      No budgets set
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -308,6 +325,13 @@ const Dashboard = () => {
                     <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <p>No transactions yet</p>
                     <p className="text-sm">Add your first transaction to get started</p>
+                    <Button 
+                      onClick={() => navigate('/transactions')}
+                      className="mt-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Transaction
+                    </Button>
                   </div>
                 )}
               </CardContent>

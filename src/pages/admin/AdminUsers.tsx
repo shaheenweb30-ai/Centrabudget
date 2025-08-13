@@ -39,6 +39,8 @@ interface User {
   updated_at: string | null;
   role?: string;
   is_active?: boolean;
+  current_plan?: string;
+  trial_ends_at?: string | null;
 }
 
 const AdminUsers = () => {
@@ -118,6 +120,18 @@ const AdminUsers = () => {
         toast.warning('Warning: Could not fetch user roles. Users will show with default role.');
       }
 
+      // Fetch user trials/plans
+      const { data: userTrials, error: trialsError } = await supabase
+        .from('user_trials')
+        .select('user_id, plan_type, ends_at');
+
+      console.log('User trials fetch result:', { userTrials, trialsError, count: userTrials?.length || 0 });
+
+      if (trialsError) {
+        console.error('Error fetching user trials:', trialsError);
+        toast.warning('Warning: Could not fetch user trials. Plan information will not be displayed.');
+      }
+
       // Create a map of user roles
       const roleMap = new Map();
       if (userRoles) {
@@ -126,17 +140,67 @@ const AdminUsers = () => {
         });
       }
 
+      // Create a map of user plans
+      const planMap = new Map();
+      const trialMap = new Map();
+      if (userTrials) {
+        userTrials.forEach(({ user_id, plan_type, ends_at }) => {
+          planMap.set(user_id, plan_type);
+          trialMap.set(user_id, ends_at);
+        });
+      }
+
       // Transform users to match our User interface
-      const transformedUsers: User[] = (users || []).map(user => ({
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        avatar_url: user.avatar_url,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        role: roleMap.get(user.id) || 'user',
-        is_active: true
-      }));
+      const transformedUsers: User[] = (users || []).map(user => {
+        const userRole = roleMap.get(user.id) || 'user';
+        
+        // Determine current plan based on role, not just trial data
+        let currentPlan = 'free';
+        let trialEndsAt = null;
+        
+        if (userRole === 'subscriber') {
+          currentPlan = 'pro';
+        } else if (userRole === 'admin') {
+          currentPlan = 'admin';
+        } else if (userRole === 'user') {
+          // For free users, check if they have an active trial
+          const trialEnd = trialMap.get(user.id);
+          if (trialEnd) {
+            const trialEndDate = new Date(trialEnd);
+            const now = new Date();
+            if (trialEndDate > now) {
+              currentPlan = 'free';
+              trialEndsAt = trialEnd;
+            } else {
+              currentPlan = 'free';
+            }
+          } else {
+            currentPlan = 'free';
+          }
+        }
+        
+        // Debug logging for plan determination
+        console.log(`User ${user.email} (${user.id}):`, {
+          userRole,
+          currentPlan,
+          trialEndsAt,
+          hasTrial: trialMap.has(user.id),
+          trialData: trialMap.get(user.id)
+        });
+        
+        return {
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          avatar_url: user.avatar_url,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          role: userRole,
+          is_active: true,
+          current_plan: currentPlan,
+          trial_ends_at: trialEndsAt
+        };
+      });
 
       if (transformedUsers.length === 0) {
         console.log('No users found in public.users table');
@@ -161,7 +225,9 @@ const AdminUsers = () => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             role: 'admin',
-            is_active: true
+            is_active: true,
+            current_plan: 'admin',
+            trial_ends_at: null
           },
           {
             id: 'sample-2',
@@ -171,7 +237,9 @@ const AdminUsers = () => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             role: 'user',
-            is_active: true
+            is_active: true,
+            current_plan: 'free',
+            trial_ends_at: null
           }
         ];
         setUsers(sampleUsers);
@@ -233,12 +301,55 @@ const AdminUsers = () => {
   const handleRoleChange = async (userId: string, newRole: string) => {
     setActionLoading(userId);
     try {
-      // In a real implementation, you would update the user role in the database
-      // const { error } = await supabase
-      //   .from('user_roles')
-      //   .upsert({ user_id: userId, role: newRole });
+      // First, check if user already has this role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('role', newRole)
+        .single();
 
-      // For now, update the local state
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking existing role:', checkError);
+        toast.error('Failed to check user role');
+        return;
+      }
+
+      if (existingRole) {
+        // User already has this role, just update local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId ? { ...user, role: newRole } : user
+          )
+        );
+        toast.success(`User already has role: ${newRole}`);
+        return;
+      }
+
+      // Remove any existing roles for this user first
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('Error removing existing roles:', deleteError);
+        toast.error('Failed to remove existing user role');
+        return;
+      }
+
+      // Insert new role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        toast.error('Failed to update user role');
+        return;
+      }
+
+      // Update local state
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === userId ? { ...user, role: newRole } : user
@@ -249,6 +360,202 @@ const AdminUsers = () => {
     } catch (error) {
       console.error('Error updating user role:', error);
       toast.error('Failed to update user role');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Plan management functions
+  const handlePromoteToPro = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      // First, check if user already has the subscriber role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('role', 'subscriber')
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking existing role:', checkError);
+        toast.error('Failed to check user role');
+        return;
+      }
+
+      if (existingRole) {
+        // User already has subscriber role, just update local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId ? { 
+              ...user, 
+              role: 'subscriber',
+              current_plan: 'pro',
+              trial_ends_at: null
+            } : user
+          )
+        );
+        toast.success('User is already Pro');
+        return;
+      }
+
+      // Remove any existing roles for this user first
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('Error removing existing roles:', deleteError);
+        toast.error('Failed to remove existing user role');
+        return;
+      }
+
+      // Insert new subscriber role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'subscriber' });
+
+      if (roleError) {
+        console.error('Error updating user role:', roleError);
+        toast.error('Failed to promote user to Pro');
+        return;
+      }
+
+      // Remove any existing trial
+      const { error: trialError } = await supabase
+        .from('user_trials')
+        .delete()
+        .eq('user_id', userId);
+
+      if (trialError) {
+        console.error('Error removing trial:', trialError);
+        // Don't fail the operation if trial removal fails
+      }
+
+      // Update local state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? { 
+            ...user, 
+            role: 'subscriber',
+            current_plan: 'pro',
+            trial_ends_at: null
+          } : user
+        )
+      );
+      
+      toast.success('User promoted to Pro successfully');
+    } catch (error) {
+      console.error('Error promoting user to Pro:', error);
+      toast.error('Failed to promote user to Pro');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDowngradeToFree = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      // First, check if user already has the user role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('role', 'user')
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking existing role:', checkError);
+        toast.error('Failed to check user role');
+        return;
+      }
+
+      if (existingRole) {
+        // User already has user role, just update local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId ? { 
+              ...user, 
+              role: 'user',
+              current_plan: 'free',
+              trial_ends_at: null
+            } : user
+          )
+        );
+        toast.success('User is already on Free plan');
+        return;
+      }
+
+      // Remove any existing roles for this user first
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('Error removing existing roles:', deleteError);
+        toast.error('Failed to remove existing user role');
+        return;
+      }
+
+      // Insert new user role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'user' });
+
+      if (roleError) {
+        console.error('Error updating user role:', roleError);
+        toast.error('Failed to downgrade user to Free');
+        return;
+      }
+
+      // Remove any existing trial first
+      const { error: deleteTrialError } = await supabase
+        .from('user_trials')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteTrialError) {
+        console.error('Error removing existing trial:', deleteTrialError);
+        // Don't fail the operation if trial removal fails
+      }
+
+      // Create a new trial period (30 days from now)
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+      const { error: trialError } = await supabase
+        .from('user_trials')
+        .insert({ 
+          user_id: userId, 
+          plan_type: 'free',
+          started_at: new Date().toISOString(),
+          ends_at: trialEndsAt.toISOString()
+        });
+
+      if (trialError) {
+        console.error('Error creating trial:', trialError);
+        toast.error('Failed to create trial period');
+        return;
+      }
+
+      // Update local state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? { 
+            ...user, 
+            role: 'user',
+            current_plan: 'free',
+            trial_ends_at: trialEndsAt.toISOString()
+          } : user
+        )
+      );
+      
+      toast.success('User downgraded to Free trial successfully');
+    } catch (error) {
+      console.error('Error downgrading user to Free:', error);
+      toast.error('Failed to downgrade user to Free');
     } finally {
       setActionLoading(null);
     }
@@ -379,7 +686,7 @@ const AdminUsers = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -410,12 +717,26 @@ const AdminUsers = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Subscribers</p>
+                  <p className="text-sm font-medium text-gray-600">Pro Users</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {users.filter(u => u.role === 'subscriber').length}
+                    {users.filter(u => u.current_plan === 'pro').length}
                   </p>
                 </div>
                 <Crown className="w-8 h-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Free Trial Users</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {users.filter(u => u.current_plan === 'free' && u.trial_ends_at).length}
+                  </p>
+                </div>
+                <User className="w-8 h-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -484,6 +805,7 @@ const AdminUsers = () => {
                       <TableHead>User</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
+                      <TableHead>Plan</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead>Last Updated</TableHead>
@@ -517,6 +839,26 @@ const AdminUsers = () => {
                         </TableCell>
                         <TableCell>
                           {getRoleBadge(user.role || 'user')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Badge 
+                              variant="outline"
+                              className={
+                                user.current_plan === 'pro' ? 'border-purple-500 text-purple-700 bg-purple-50' :
+                                user.current_plan === 'enterprise' ? 'border-blue-500 text-blue-700 bg-blue-50' :
+                                'border-green-500 text-green-700 bg-green-50'
+                              }
+                            >
+                              {user.current_plan === 'pro' ? 'Pro' : 
+                               user.current_plan === 'enterprise' ? 'Enterprise' : 'Free'}
+                            </Badge>
+                            {user.trial_ends_at && (
+                              <span className="text-xs text-gray-500">
+                                Trial ends: {formatDate(user.trial_ends_at)}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge 
@@ -585,6 +927,26 @@ const AdminUsers = () => {
                               >
                                 <User className="w-4 h-4 mr-2 text-green-500" />
                                 Make User
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuSeparator />
+                              
+                              {/* Plan Management */}
+                              <DropdownMenuItem 
+                                onClick={() => handlePromoteToPro(user.id)}
+                                disabled={user.current_plan === 'pro'}
+                                className="cursor-pointer"
+                              >
+                                <Crown className="w-4 h-4 mr-2 text-purple-500" />
+                                Promote to Pro
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDowngradeToFree(user.id)}
+                                disabled={user.current_plan === 'free'}
+                                className="cursor-pointer"
+                              >
+                                <User className="w-4 h-4 mr-2 text-green-500" />
+                                Downgrade to Free Trial
                               </DropdownMenuItem>
                               
                               <DropdownMenuSeparator />

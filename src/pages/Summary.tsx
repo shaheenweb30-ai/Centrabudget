@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/contexts/SettingsContext";
 import Layout from "@/components/Layout";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
@@ -80,6 +81,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'
 const Summary = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatCurrency } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -499,7 +501,7 @@ const Summary = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${topSpendingCategory.spent.toFixed(2)}</p>
+                      <p className="font-bold">{formatCurrency(topSpendingCategory.spent)}</p>
                       <p className="text-xs text-muted-foreground">
                         {topSpendingCategory.budget ? `${topSpendingCategory.percentage.toFixed(1)}%` : 'No budget'}
                       </p>
@@ -562,7 +564,7 @@ const Summary = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                      <Tooltip formatter={(value) => [formatCurrency(value), 'Amount']} />
                       <Legend />
                     </RechartsPieChart>
                   </ResponsiveContainer>
@@ -624,8 +626,8 @@ const Summary = () => {
                       {summary.budget && (
                         <>
                           <div className="flex justify-between text-sm mb-2">
-                            <span>Budget: ${summary.budget.amount.toFixed(2)}</span>
-                            <span>Spent: ${summary.spent.toFixed(2)}</span>
+                            <span>Budget: {formatCurrency(summary.budget.amount)}</span>
+                            <span>Spent: {formatCurrency(summary.spent)}</span>
                           </div>
                           <Progress 
                             value={summary.percentage} 
@@ -633,14 +635,14 @@ const Summary = () => {
                           />
                           <div className="flex justify-between text-xs text-muted-foreground">
                             <span>{summary.percentage.toFixed(1)}% used</span>
-                            <span>${summary.remaining.toFixed(2)} remaining</span>
+                            <span>{formatCurrency(summary.remaining)} remaining</span>
                           </div>
                         </>
                       )}
 
                       {!summary.budget && summary.spent > 0 && (
                         <div className="text-sm text-muted-foreground">
-                          Spent: ${summary.spent.toFixed(2)} (no budget set)
+                          Spent: {formatCurrency(summary.spent)} (no budget set)
                         </div>
                       )}
 
