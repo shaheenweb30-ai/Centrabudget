@@ -33,7 +33,7 @@ import Transactions from "./pages/Transactions";
 
 
 import CategoriesBudget from "./pages/CategoriesBudget";
-
+import Subscription from "./pages/Subscription";
 
 import Reports from "./pages/Reports";
 
@@ -198,6 +198,11 @@ const AppContent = () => {
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/subscription" element={
+                    <ProtectedRoute>
+                      <Subscription />
                     </ProtectedRoute>
                   } />
 
