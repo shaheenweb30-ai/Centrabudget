@@ -40,6 +40,7 @@ import Subscription from "./pages/Subscription";
 import Checkout from "./pages/Checkout";
 
 import Reports from "./pages/Reports";
+import ButtonTest from "./pages/ButtonTest";
 
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTranslations from "./pages/admin/AdminTranslations";
@@ -226,6 +227,9 @@ const AppContent = () => {
                   <Route path="/help" element={<Help />} />
                   <Route path="/privacy" element={<Privacy />} />
                    <Route path="/terms" element={<Terms />} />
+                   
+                   {/* Debug Route */}
+                   <Route path="/button-test" element={<ButtonTest />} />
                   
                   {/* Admin Routes */}
                   <Route path="/admin/users" element={<AdminUsers />} />

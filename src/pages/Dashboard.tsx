@@ -13,7 +13,8 @@ import {
   Zap,
   Sparkles,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  HelpCircle
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +26,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { transactions, categories } = useTransactions();
   const { preferences, formatCurrency } = useSettings();
-  const { isNewUser, shouldShowWelcome, markWelcomeShown } = useOnboarding();
+  const { isNewUser, shouldShowWelcome, markWelcomeShown, resetWelcomeState } = useOnboarding();
   
   // Calculate financial metrics
   const totalIncome = transactions
@@ -84,10 +85,10 @@ const Dashboard = () => {
     .sort((a, b) => b.spent - a.spent)
     .slice(0, 3);
 
-  // Show welcome banner for new users
-  if (shouldShowWelcome) {
-    return (
-      <DashboardLayout>
+  // Welcome page is now only shown when explicitly requested via View Welcome Guide button
+  // if (shouldShowWelcome) {
+    // return (
+    //   <DashboardLayout>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50/30 p-6">
           <div className="max-w-4xl mx-auto">
             {/* Welcome Banner */}
@@ -121,8 +122,7 @@ const Dashboard = () => {
                       markWelcomeShown();
                       navigate('/transactions');
                     }}
-                    variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10 px-8 py-3 rounded-full font-semibold"
+                    className="bg-white/20 backdrop-blur-sm border-2 border-white/40 text-white hover:bg-white/30 hover:border-white/60 px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add First Transaction
@@ -173,18 +173,21 @@ const Dashboard = () => {
             {/* Skip Option */}
             <div className="text-center">
               <Button
-                onClick={() => markWelcomeShown()}
+                onClick={() => {
+                  markWelcomeShown();
+                  navigate('/categories-budget');
+                }}
                 variant="ghost"
                 className="text-gray-500 hover:text-gray-700"
               >
-                Skip welcome and go to dashboard
+                Skip welcome and go to categories
               </Button>
             </div>
           </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+        // </div>
+      // </DashboardLayout>
+    // );
+  // }
 
   return (
     <DashboardLayout>
@@ -221,6 +224,9 @@ const Dashboard = () => {
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Add Transaction
               </Button>
+
+
+
             </div>
           </div>
 
@@ -254,6 +260,56 @@ const Dashboard = () => {
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Transaction
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Empty State for Users with No Transactions */}
+          {transactions.length === 0 && !isNewUser && (
+            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg mb-6">
+              <CardContent className="p-6 text-center">
+                <div className="w-14 h-14 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Plus className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  Start Tracking Your Finances 📊
+                </h2>
+                <p className="text-gray-600 mb-4 max-w-xl mx-auto">
+                  Add your first transaction to see your financial dashboard come to life with insights and analytics.
+                </p>
+                <Button
+                  onClick={() => navigate('/transactions')}
+                  className="px-6 py-3 rounded-full font-semibold bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Transaction
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Help & Onboarding Section */}
+          {!shouldShowWelcome && (
+            <Card className="bg-gradient-to-r from-slate-50 to-blue-50 border-slate-200 shadow-lg mb-6">
+              <CardContent className="p-6 text-center">
+                <div className="w-14 h-14 bg-gradient-to-r from-slate-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <HelpCircle className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  Want to See the Welcome Guide? 🚀
+                </h2>
+                <p className="text-gray-600 mb-4 max-w-xl mx-auto">
+                  Click below to see the full welcome guide with step-by-step instructions for setting up your budget categories and adding your first transactions.
+                </p>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={resetWelcomeState}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Show Welcome Guide
                   </Button>
                 </div>
               </CardContent>
@@ -388,8 +444,16 @@ const Dashboard = () => {
                 ) : (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                     <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No spending data yet</p>
-                    <p className="text-sm">Add transactions to see your spending patterns</p>
+                    <p className="text-slate-700 dark:text-slate-300 font-medium mb-2">No spending data yet</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Add transactions to see your spending patterns</p>
+                    <Button 
+                      onClick={() => navigate('/transactions')}
+                      variant="debug"
+                      className="rounded-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Transaction (DEBUG)
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -450,14 +514,16 @@ const Dashboard = () => {
                 ) : (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                     <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No transactions yet</p>
-                    <p className="text-sm">Add your first transaction to get started</p>
+                    <p className="text-slate-700 dark:text-slate-300 font-medium mb-2">No transactions yet</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Add your first transaction to get started</p>
                     <Button 
                       onClick={() => navigate('/transactions')}
-                      className="mt-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                      variant="debug"
+                      className="mt-3 rounded-full font-semibold px-6 py-3"
+                      size="lg"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add Transaction
+                      Add First Transaction (DEBUG)
                     </Button>
                   </div>
                 )}

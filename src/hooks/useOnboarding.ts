@@ -6,6 +6,7 @@ interface OnboardingState {
   shouldShowWelcome: boolean;
   markWelcomeShown: () => void;
   markAsReturningUser: () => void;
+  resetWelcomeState: () => void;
 }
 
 export const useOnboarding = (): OnboardingState => {
@@ -22,8 +23,8 @@ export const useOnboarding = (): OnboardingState => {
       setIsNewUser(newUserFlag);
       setWelcomeShown(welcomeShownFlag);
       
-      // Show welcome if user is new and welcome hasn't been shown
-      setShouldShowWelcome(newUserFlag && !welcomeShownFlag);
+      // Don't show welcome automatically - only show when explicitly requested
+      setShouldShowWelcome(false);
     } catch (error) {
       console.warn('Failed to read onboarding state from localStorage:', error);
       // Default to not showing welcome if localStorage fails
@@ -53,11 +54,22 @@ export const useOnboarding = (): OnboardingState => {
     }
   };
 
+  const resetWelcomeState = () => {
+    try {
+      localStorage.removeItem('centrabudget_welcomeShown');
+      setWelcomeShown(false);
+      setShouldShowWelcome(true);
+    } catch (error) {
+      console.warn('Failed to reset welcome state:', error);
+    }
+  };
+
   return {
     isNewUser,
     welcomeShown,
     shouldShowWelcome,
     markWelcomeShown,
     markAsReturningUser,
+    resetWelcomeState,
   };
 };
