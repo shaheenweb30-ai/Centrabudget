@@ -636,56 +636,7 @@ const Transactions = () => {
             </CardContent>
           </Card>
 
-          {/* Welcome Message */}
-          <Card className="rounded-xl border-0 bg-gradient-to-r from-green-500/10 to-blue-500/10 dark:from-green-500/20 dark:to-blue-500/20 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border border-green-200/50 dark:border-green-700/50">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <Receipt className="w-4 h-4 sm:w-5 sm:w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg sm:text-xl font-semibold text-slate-800 dark:text-slate-200">
-                    Transactions Working!
-                  </CardTitle>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    You can now add, view, and manage transactions
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-white/50 dark:bg-slate-800/50 rounded-lg p-3 sm:p-4 border border-green-200/50 dark:border-green-700/50">
-                <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 mb-3">
-                  The Transactions page is now fully functional! You can:
-                </p>
-                <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2 mb-4">
-                  <li>• Add new income and expense transactions</li>
-                  <li>• Use predefined categories or create custom ones</li>
-                  <li>• Search and filter transactions</li>
-                  <li>• View real-time totals and balances</li>
-                  <li>• Delete transactions as needed</li>
-                </ul>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    onClick={() => setShowAddForm(true)}
-                    className="rounded-full bg-green-600 hover:bg-green-700 text-white"
-                    disabled={hasReachedLimit}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {hasReachedLimit ? 'Limit Reached' : 'Add Transaction'}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate('/categories-budget')}
-                    className="rounded-full border-green-200 text-green-600 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/50"
-                  >
-                    View Categories & Budgets
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
         </div>
       </div>
 
