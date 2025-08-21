@@ -47,7 +47,7 @@ const Pricing: React.FC = () => {
     document.title = "Pricing | ClearCents — Start Free, Upgrade When You Need More";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Choose your ClearCents plan: Start free with basic features, upgrade to Pro for unlimited access, or go Enterprise for team solutions. No credit card required.');
+      metaDescription.setAttribute('content', 'Choose your ClearCents plan: Start free with basic features, upgrade to Pro for unlimited access. No credit card required.');
     }
   }, []);
 
@@ -105,8 +105,6 @@ const Pricing: React.FC = () => {
         ? (user ? 'Go to Dashboard' : 'Get Started Free') 
         : plan.id === 'pro' 
         ? (user ? (isFreePlan ? 'Upgrade to Pro' : 'Go to Dashboard') : 'Get Pro') 
-        : plan.id === 'enterprise' 
-        ? (user ? 'Contact Sales' : 'Get Enterprise') 
         : plan.buttonText,
       buttonVariant: 'default', // We'll handle styling through className instead
       disabled: plan.id === 'free' ? false : (plan.id === 'pro' && user && !isFreePlan),
@@ -167,14 +165,6 @@ const Pricing: React.FC = () => {
           // Already on pro plan - redirect to dashboard
           navigate('/dashboard');
         }
-      } else {
-        // Not logged in - redirect to signup
-        navigate('/signup');
-      }
-    } else if (planName === 'Enterprise') {
-      if (user) {
-        // Logged in user - redirect to contact page for enterprise inquiry
-        navigate('/contact');
       } else {
         // Not logged in - redirect to signup
         navigate('/signup');
@@ -267,7 +257,7 @@ const Pricing: React.FC = () => {
           </div>
 
           <div className="max-w-6xl mx-auto relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {plans.map((plan, index) => (
                 <div key={plan.name} className="group relative">
 
@@ -352,8 +342,6 @@ const Pricing: React.FC = () => {
                             ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 hover:shadow-green-500/25 hover:shadow-2xl' 
                             : plan.name === 'Pro' 
                             ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 hover:shadow-blue-500/25 hover:shadow-2xl' 
-                            : plan.name === 'Enterprise' 
-                            ? 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white border-0 hover:shadow-purple-500/25 hover:shadow-2xl' 
                             : ''
                           }
                           ${plan.disabled ? 'opacity-50 cursor-not-allowed hover:scale-100 bg-gray-400 hover:shadow-lg' : ''}
@@ -364,7 +352,6 @@ const Pricing: React.FC = () => {
                         <div className="flex items-center justify-center gap-2">
                           {plan.name === 'Free' && <Star className="w-5 h-5" />}
                           {plan.name === 'Pro' && <Zap className="w-5 h-5" />}
-                          {plan.name === 'Enterprise' && <Users className="w-5 h-5" />}
                           <span>{plan.buttonText}</span>
                           {!plan.disabled && <ArrowRight className="w-4 h-4 ml-1" />}
                         </div>
@@ -417,27 +404,25 @@ const Pricing: React.FC = () => {
                       <th className="text-left py-8 px-8 text-xl font-semibold text-gray-900">Feature</th>
                       <th className="text-center py-8 px-8 text-xl font-semibold text-gray-900">Free</th>
                       <th className="text-center py-8 px-8 text-xl font-semibold text-blue-600">Pro</th>
-                      <th className="text-center py-8 px-8 text-xl font-semibold text-purple-600">Enterprise</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {[
-                      { feature: 'Categories', free: `${limits.categories}/month`, pro: 'Unlimited', enterprise: 'Unlimited' },
-                      { feature: 'Budgets', free: `${limits.budgets}/month`, pro: 'Unlimited', enterprise: 'Unlimited' },
-                      { feature: 'Transactions', free: `${limits.transactions}/month`, pro: 'Unlimited', enterprise: 'Unlimited' },
-                      { feature: 'AI Insights', free: `${limits.aiInsights}/month`, pro: '50+/month', enterprise: 'Unlimited' },
-                      { feature: 'Team Members', free: '1', pro: 'Up to 5', enterprise: 'Unlimited' },
-                      { feature: 'API Access', free: 'No', pro: 'Yes', enterprise: 'Custom' },
-                      { feature: 'Priority Support', free: 'Community', pro: 'Email + Chat', enterprise: 'Dedicated' },
-                      { feature: 'White-label', free: 'No', pro: 'Basic', enterprise: 'Full' },
-                      { feature: 'Custom Integrations', free: 'No', pro: 'Limited', enterprise: 'Custom' },
-                      { feature: 'SLA Guarantees', free: 'No', pro: 'No', enterprise: 'Yes' }
+                      { feature: 'Categories', free: `${limits.categories}/month`, pro: 'Unlimited' },
+                      { feature: 'Budgets', free: `${limits.budgets}/month`, pro: 'Unlimited' },
+                      { feature: 'Transactions', free: `${limits.transactions}/month`, pro: 'Unlimited' },
+                      { feature: 'AI Insights', free: `${limits.aiInsights}/month`, pro: '50+/month' },
+                      { feature: 'Team Members', free: '1', pro: 'Up to 5' },
+                      { feature: 'API Access', free: 'No', pro: 'Yes' },
+                      { feature: 'Priority Support', free: 'Community', pro: 'Email + Chat' },
+                      { feature: 'White-label', free: 'No', pro: 'Basic' },
+                      { feature: 'Custom Integrations', free: 'No', pro: 'Limited' },
+                      { feature: 'SLA Guarantees', free: 'No', pro: 'No' }
                     ].map((row, index) => (
                       <tr key={index} className="hover:bg-gray-50/80 transition-colors duration-300 group">
                         <td className="py-6 px-8 font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">{row.feature}</td>
                         <td className="py-6 px-8 text-center text-gray-600">{row.free}</td>
                         <td className="py-6 px-8 text-center text-blue-600 font-semibold">{row.pro}</td>
-                        <td className="py-6 px-8 text-center text-purple-600 font-semibold">{row.enterprise}</td>
                       </tr>
                     ))}
                   </tbody>

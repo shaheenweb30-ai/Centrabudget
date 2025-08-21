@@ -72,8 +72,6 @@ const AdminPlanFeatures = () => {
         return <Package className="w-6 h-6 text-slate-600" />;
       case 'pro':
         return <Crown className="w-6 h-6 text-amber-500" />;
-      case 'enterprise':
-        return <Building className="w-6 h-6 text-blue-600" />;
       default:
         return <Package className="w-6 h-6" />;
     }
@@ -85,23 +83,19 @@ const AdminPlanFeatures = () => {
         return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
       case 'pro':
         return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white';
-      case 'enterprise':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
       default:
         return 'bg-slate-100 text-slate-700';
     }
   };
 
-  const getPlanName = (planId: string) => {
+  const getPlanDisplayName = (planId: string) => {
     switch (planId) {
       case 'free':
         return 'Free Plan';
       case 'pro':
         return 'Pro Plan';
-      case 'enterprise':
-        return 'Enterprise Plan';
       default:
-        return planId;
+        return 'Unknown Plan';
     }
   };
 
@@ -270,7 +264,7 @@ const AdminPlanFeatures = () => {
     );
   }
 
-  const plans = ['free', 'pro', 'enterprise'];
+  const plans = ['free', 'pro'];
 
   return (
     <DashboardLayout>
@@ -300,7 +294,7 @@ const AdminPlanFeatures = () => {
                         {getPlanIcon(planId)}
                       </div>
                       <div>
-                        <CardTitle className="text-xl">{getPlanName(planId)}</CardTitle>
+                        <CardTitle className="text-xl">{getPlanDisplayName(planId)}</CardTitle>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="default" className="bg-green-100 text-green-800">
                             {planFeatures.length} active features

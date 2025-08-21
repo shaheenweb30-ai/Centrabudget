@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/contexts/SettingsContext";
 
 const AdminPricing = () => {
-  const { plans, pricingConfig, isLoading, updatePricing, refreshPricing } = usePricing();
+  const { plans, isLoading, updatePricing } = usePricing();
   const { user } = useAuth();
   const { toast } = useToast();
   const { formatCurrency } = useSettings();
@@ -82,8 +82,6 @@ const AdminPricing = () => {
         return <Package className="w-6 h-6 text-slate-600" />;
       case 'pro':
         return <Crown className="w-6 h-6 text-amber-500" />;
-      case 'enterprise':
-        return <Building className="w-6 h-6 text-blue-600" />;
       default:
         return <Package className="w-6 h-6" />;
     }
@@ -95,10 +93,19 @@ const AdminPricing = () => {
         return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
       case 'pro':
         return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white';
-      case 'enterprise':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
       default:
         return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  const getPlanDisplayName = (planId: string) => {
+    switch (planId) {
+      case 'free':
+        return 'Free Plan';
+      case 'pro':
+        return 'Pro Plan';
+      default:
+        return 'Unknown Plan';
     }
   };
 
@@ -136,9 +143,12 @@ const AdminPricing = () => {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={refreshPricing}
+                onClick={() => {
+                  // Refresh functionality removed - using local state only
+                }}
                 variant="outline"
-                className="flex items-center gap-2"
+                size="sm"
+                className="gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
                 Refresh
@@ -314,53 +324,7 @@ const AdminPricing = () => {
           </div>
 
           {/* Pricing History */}
-          {pricingConfig.length > 0 && (
-            <Card className="rounded-xl border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  Pricing Update History
-                </CardTitle>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Track recent pricing changes
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-600">
-                        <th className="text-left py-2 text-sm font-medium text-slate-700 dark:text-slate-300">Plan</th>
-                        <th className="text-left py-2 text-sm font-medium text-slate-700 dark:text-slate-300">Monthly Price</th>
-                        <th className="text-left py-2 text-sm font-medium text-slate-700 dark:text-slate-300">Yearly Price</th>
-                        <th className="text-left py-2 text-sm font-medium text-slate-700 dark:text-slate-300">Updated</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                                             {pricingConfig.slice(0, 10).map((config) => (
-                         <tr key={config.id} className="border-b border-slate-100 dark:border-slate-700">
-                           <td className="py-2">
-                             <Badge className={getPlanColor(config.plan_id)}>
-                               {config.plan_id.charAt(0).toUpperCase() + config.plan_id.slice(1)}
-                             </Badge>
-                           </td>
-                           <td className="py-2 text-sm text-slate-600 dark:text-slate-400">
-                             {formatCurrency(config.monthly_price)}
-                           </td>
-                           <td className="py-2 text-sm text-slate-600 dark:text-slate-400">
-                             {formatCurrency(config.yearly_price)}
-                           </td>
-                           <td className="py-2 text-sm text-slate-500 dark:text-slate-400">
-                             {new Date(config.updated_at).toLocaleDateString()}
-                           </td>
-                         </tr>
-                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Removed pricingConfig references */}
 
           {/* Info Section */}
           <Card className="rounded-xl border-0 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">

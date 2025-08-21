@@ -71,6 +71,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     if (path === '/dashboard' && location.pathname === '/dashboard') return true;
     if (path === '/transactions' && location.pathname === '/transactions') return true;
     if (path === '/categories-budget' && location.pathname === '/categories-budget') return true;
+    if (path === '/ai-financial-coach' && location.pathname === '/ai-financial-coach') return true;
     if (path === '/reports' && location.pathname === '/reports') return true;
     if (path === '/profile' && location.pathname === '/profile') return true;
     if (path === '/settings' && location.pathname === '/settings') return true;
@@ -105,6 +106,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const financialNavigation = [
     { name: "Transactions", href: "/transactions", icon: CreditCard },
     { name: "Categories & Budget", href: "/categories-budget", icon: Target },
+    { name: "AI Financial Coach", href: "/ai-financial-coach", icon: Brain },
     { name: "Reports", href: "/reports", icon: BarChart3 },
   ];
 

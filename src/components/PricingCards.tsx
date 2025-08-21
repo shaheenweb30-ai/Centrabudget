@@ -88,9 +88,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   });
 
   const handleUpgrade = (planName: string) => {
-    if (planName === 'Enterprise') {
-      window.location.href = 'mailto:sales@clearcents.com?subject=Enterprise%20Plan%20Inquiry';
-    } else if (planName === 'Pro') {
+    if (planName === 'Pro') {
       // TODO: Implement Stripe checkout
       console.log('Upgrade to Pro');
     }
@@ -131,7 +129,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan, index) => (
           <Card 
             key={plan.name}

@@ -91,30 +91,6 @@ export const PricingProvider: React.FC<{ children: ReactNode }> = ({ children })
       popular: true,
       buttonText: 'Upgrade to Pro',
       buttonVariant: 'default'
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      subtitle: 'For teams and organizations',
-      description: 'Custom solutions with dedicated support and advanced team features.',
-      monthlyPrice: null,
-      yearlyPrice: null,
-      isCustomPricing: true,
-      customPricingText: 'Contact Us',
-      features: [
-        'Everything in Pro',
-        'Unlimited team collaboration',
-        'Advanced team analytics',
-        'Custom integrations',
-        'Dedicated account manager',
-        'SLA guarantees',
-        'Custom reporting',
-        'White-label options',
-        'Advanced security features',
-        'Compliance reporting'
-      ],
-      buttonText: 'Contact Sales',
-      buttonVariant: 'outline'
     }
   ];
 

@@ -41,6 +41,7 @@ import Transactions from "./pages/Transactions";
 
 
 import CategoriesBudget from "./pages/CategoriesBudget";
+import AIFinancialCoach from "./pages/AIFinancialCoach";
 import Subscription from "./pages/Subscription";
 import Checkout from "./pages/Checkout";
 
@@ -193,6 +194,12 @@ const AppContent = () => {
                   <Route path="/categories-budget" element={
                     <ProtectedRoute>
                       <CategoriesBudget />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/ai-financial-coach" element={
+                    <ProtectedRoute>
+                      <AIFinancialCoach />
                     </ProtectedRoute>
                   } />
 
