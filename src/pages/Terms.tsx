@@ -127,7 +127,7 @@ const Terms = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-                  We partner with Paddle to process payments. Refunds are available within 14 days of purchase or renewal. 
+                  Payment processing will be available soon. Refunds will be available within 14 days of purchase or renewal. 
                   To request a refund, contact <span className="font-semibold text-blue-600 dark:text-blue-400">support@centrabudget.com</span> with your transaction details.
                 </p>
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">

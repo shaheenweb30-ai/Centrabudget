@@ -1,12 +1,15 @@
 import { ReactNode, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useTranslation } from "react-i18next";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUpgrade } from "@/hooks/useUpgrade";
+import { SubscriptionPlanPopup } from "./SubscriptionPlanPopup";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { Logo } from "./Logo";
+
 import {
   Sidebar,
   SidebarContent,
@@ -56,10 +59,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { shouldApplyDarkTheme } = useSettings();
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAdmin } = useUserRole(user);
   const { currentPlan, isLoading: planLoading } = useUserPlan();
   const { isMobile } = useResponsive();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { showUpgradePopup, hideUpgradePopup, handlePlanSelection, showPlanPopup } = useUpgrade();
+
 
   // Show loading state while auth or plan is initializing
   if (authLoading || planLoading) {
@@ -76,6 +82,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     if (path === '/profile' && location.pathname === '/profile') return true;
     if (path === '/settings' && location.pathname === '/settings') return true;
     if (path === '/subscription' && location.pathname === '/subscription') return true;
+
     if (path === '/help' && location.pathname === '/help') return true;
     
     // Admin routes - check if current path starts with admin and matches the specific admin section
@@ -113,12 +120,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const accountNavigation = [
     { name: "My Profile", href: "/profile", icon: User },
     { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Subscription", href: "/subscription", icon: Package },
+    { name: "Subscription", href: "/subscription", icon: CreditCard },
   ];
 
   // Add upgrade option for free plan users only
   const upgradeNavigation = user && currentPlan && currentPlan === 'free' ? [
-    { name: "Upgrade to Pro", href: "/checkout?plan=pro", icon: Crown, highlight: true }
+    { name: "Upgrade to Pro", href: "/pricing", icon: Crown, highlight: true }
   ] : [];
 
   const supportNavigation = [
@@ -228,17 +235,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                             <span className="inline">{item.name}</span>
                           </Link>
                         </SidebarMenuButton>
-                        {item.href === '/subscription' && user && currentPlan && (
-                          <SidebarMenuBadge className={`text-xs px-2 py-1 ${
-                            currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro'
-                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
-                              : 'bg-slate-200 text-slate-700'
-                          }`}>
-                            {currentPlan === 'admin_pro' ? 'Admin Pro' : 
-                             currentPlan === 'admin' ? 'Admin Plan' : 
-                             currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
-                          </SidebarMenuBadge>
-                        )}
+
                       </SidebarMenuItem>
                     );
                   })}
@@ -254,22 +251,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {upgradeNavigation.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <SidebarMenuItem key={item.name}>
-                          <SidebarMenuButton 
-                            asChild 
-                            className="text-sm sm:text-base bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 border-0"
-                          >
-                            <Link to={item.href}>
-                              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="inline">{item.name}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
+                    <SidebarMenuItem>
+                      <SidebarMenuButton 
+                        onClick={showUpgradePopup}
+                        className="text-sm sm:text-base bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:from-amber-600 hover:to-orange-700 border-0"
+                      >
+                        <Crown className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="inline">Upgrade to Pro</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -424,17 +414,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         >
                           <item.icon className="h-4 w-4" />
                           {item.name}
-                          {item.href === '/subscription' && user && currentPlan && (
-                            <span className={`ml-auto text-xs px-2 py-1 rounded-full ${
-                              currentPlan === 'pro' || currentPlan === 'admin' || currentPlan === 'admin_pro'
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
-                                : 'bg-slate-500 text-white'
-                            }`}>
-                              {currentPlan === 'admin_pro' ? 'Admin Pro' : 
-                               currentPlan === 'admin' ? 'Admin Plan' : 
-                               currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
-                            </span>
-                          )}
+
                         </Link>
                       ))}
                     </div>
@@ -443,17 +423,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     {upgradeNavigation.length > 0 && (
                       <div className="space-y-1">
                         <div className="text-xs font-medium text-amber-600 uppercase tracking-wider px-2 py-1 font-semibold">Upgrade</div>
-                        {upgradeNavigation.map((item) => (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-200 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600"
-                          >
-                            <item.icon className="h-4 w-4" />
-                            {item.name}
-                          </Link>
-                        ))}
+                        <button
+                          onClick={() => {
+                            showUpgradePopup();
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-200 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 w-full text-left"
+                        >
+                          <Crown className="h-4 w-4" />
+                          Upgrade to Pro
+                        </button>
                       </div>
                     )}
                     
@@ -511,6 +490,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
         </SidebarInset>
       </SidebarProvider>
+
+      {/* Subscription Plan Selection Popup */}
+      <SubscriptionPlanPopup
+        isOpen={showPlanPopup}
+        onClose={hideUpgradePopup}
+        onSelectPlan={handlePlanSelection}
+        isLoading={false}
+      />
     </div>
   );
 };

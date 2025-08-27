@@ -2,6 +2,7 @@ import { Check, X, ChevronDown, ChevronUp, Sparkles, Trophy, Zap, Shield, ArrowR
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useUpgrade } from "@/hooks/useUpgrade";
 
 const COMPARISON_ROWS = [
   {
@@ -44,6 +45,7 @@ const COMPARISON_ROWS = [
 
 export function ComparisonTable() {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const { handleUpgrade } = useUpgrade();
 
   const toggleRow = (index: number) => {
     const newExpanded = new Set(expandedRows);
@@ -203,12 +205,14 @@ export function ComparisonTable() {
         <div className="text-center mt-20">
           <div className="inline-flex items-center space-x-4 bg-white rounded-full px-8 py-4 shadow-lg border border-gray-200">
             <span className="text-gray-600 font-medium">Ready to upgrade from spreadsheets?</span>
-            <Link to="/signup">
-              <Button size="lg" className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                <Zap className="w-5 h-5 mr-2" />
-                Upgrade to Pro
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              onClick={() => handleUpgrade('monthly')}
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              Upgrade to Pro
+            </Button>
           </div>
         </div>
         

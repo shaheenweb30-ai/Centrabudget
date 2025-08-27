@@ -1,589 +1,200 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Crown, 
-  CheckCircle, 
-  CreditCard, 
-  Lock, 
-  Shield, 
-  Zap,
-  Sparkles,
-  ArrowLeft,
-  Star,
-  Package,
-  Calendar,
-  Users,
-  BarChart3,
-  Download,
-  HeadphonesIcon
-} from "lucide-react";
-import DashboardLayout from "@/components/DashboardLayout";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePricing } from "@/contexts/PricingContext";
-import { usePaddle } from "@/contexts/PaddleContext";
-import { useSettings } from "@/contexts/SettingsContext";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
 
-interface PlanFeature {
-  name: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
 
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  billingCycle: 'monthly' | 'yearly';
-  features: PlanFeature[];
-  popular?: boolean;
-  savings?: number;
-}
 
 const Checkout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-  const { formatCurrency } = useSettings();
-  const { openCheckout, isInitialized, isLoading: paddleLoading } = usePaddle();
   
-  // Force USD formatting for checkout regardless of user preferences
-  const formatUSD = (amount: number): string => {
-    const absAmount = Math.abs(amount);
-    const sign = amount >= 0 ? '' : '-';
-    
-    try {
-      const formatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-
-      return `${sign}${formatter.format(absAmount)}`;
-    } catch (error) {
-      return `${sign}$${absAmount.toFixed(2)}`;
-    }
-  };
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isAutoRedirecting, setIsAutoRedirecting] = useState(false);
-  const [formData, setFormData] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: '',
-    email: user?.email || '',
-    acceptTerms: false
-  });
 
   // Get plan from URL params
   const planFromUrl = searchParams.get('plan');
 
-  // Auto-redirect to Paddle checkout when plan is specified
+  // Auto-redirect to Paddle checkout URL when plan is specified
   useEffect(() => {
-    console.log('Checkout useEffect triggered:', {
-      planFromUrl,
-      isInitialized,
-      paddleLoading,
-      selectedPlan
-    });
-    
-    if (planFromUrl === 'pro' && isInitialized && !paddleLoading) {
-      console.log('Conditions met, starting auto-redirect...');
-      
-      // Set auto-redirecting state
+    if (planFromUrl === 'pro' && !isAutoRedirecting) {
       setIsAutoRedirecting(true);
-      
-      // Automatically open Paddle checkout
-      const openPaddleCheckout = async () => {
-        try {
-          console.log('Opening Paddle checkout...');
-          await openCheckout('pro', selectedPlan);
-        } catch (error) {
-          console.error('Failed to auto-open Paddle checkout:', error);
-          setIsAutoRedirecting(false);
-          // If auto-open fails, stay on the page for manual checkout
-        }
-      };
-      
-      // Small delay to ensure everything is ready
-      const timer = setTimeout(openPaddleCheckout, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      console.log('Auto-redirect conditions not met:', {
-        planFromUrl: planFromUrl === 'pro',
-        isInitialized,
-        paddleLoading: !paddleLoading
-      });
+      // Redirect directly to Paddle checkout URL
+      window.location.href = 'https://sandbox-pay.paddle.io/hsc_01k3pb3y9e9ppr0f4xdwfyfzvf_9mvkexe2sfg2jswd8ysr8wvh25d5e24c';
     }
-  }, [planFromUrl, isInitialized, paddleLoading, selectedPlan, openCheckout]);
+  }, [planFromUrl, isAutoRedirecting]);
 
-  const { plans: pricingPlans } = usePricing();
-  
-  // Get Pro plan from pricing context
-  const proPlan = pricingPlans.find(p => p.id === 'pro');
-  
-  const plans: Plan[] = [
-    {
-      id: 'pro-monthly',
-      name: 'Pro Monthly',
-      price: proPlan?.monthlyPrice || 12.00,
-      billingCycle: 'monthly',
-      features: [
-        { name: 'Unlimited Transactions', description: 'Track unlimited income and expenses', icon: Zap },
-        { name: 'Unlimited Categories', description: 'Create unlimited budget categories', icon: Package },
-        { name: 'Advanced AI Insights', description: 'Get intelligent financial recommendations', icon: Sparkles },
-        { name: 'Priority Support', description: '24/7 customer support', icon: HeadphonesIcon },
-        { name: 'Export & Backup', description: 'Download your data anytime', icon: Download },
-        { name: 'Advanced Analytics', description: 'Detailed reports and insights', icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'pro-yearly',
-      name: 'Pro Yearly',
-      price: proPlan?.yearlyPrice || 115.20, // Updated to reflect 20% discount
-      billingCycle: 'yearly',
-      features: [
-        { name: 'Unlimited Transactions', description: 'Track unlimited income and expenses', icon: Zap },
-        { name: 'Unlimited Categories', description: 'Create unlimited budget categories', icon: Package },
-        { name: 'Advanced AI Insights', description: 'Get intelligent financial recommendations', icon: Sparkles },
-        { name: 'Priority Support', description: '24/7 customer support', icon: HeadphonesIcon },
-        { name: 'Export & Backup', description: 'Download your data anytime', icon: Download },
-        { name: 'Advanced Analytics', description: 'Detailed reports and insights', icon: BarChart3 }
-      ],
-      popular: true,
-      savings: Math.round(((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 115.20)) / ((proPlan?.monthlyPrice || 12) * 12) * 100)
-    }
-  ];
 
-  const currentPlan = plans.find(p => p.billingCycle === selectedPlan);
-  const yearlySavings = selectedPlan === 'yearly' ? ((proPlan?.monthlyPrice || 12) * 12 - (proPlan?.yearlyPrice || 115.20)) : 0;
-
-  const handlePlanChange = (cycle: 'monthly' | 'yearly') => {
-    setSelectedPlan(cycle);
-  };
-
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return v;
-    }
-  };
-
-  const formatExpiryDate = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    return v;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.acceptTerms) {
-      toast({
-        title: "Terms Required",
-        description: "Please accept the terms and conditions to continue.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!isInitialized) {
-      toast({
-        title: "Payment System Not Ready",
-        description: "Please wait a moment for the payment system to initialize.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    
-    try {
-      // Open Paddle checkout
-      await openCheckout('pro', selectedPlan);
-      
-      // Note: Paddle will handle the redirect to success/cancel URLs
-      // We don't need to navigate manually here
-      
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast({
-        title: "Payment Failed",
-        description: "There was an issue processing your payment. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   if (!user) {
     navigate('/login');
     return null;
   }
 
+  // Show loading/redirecting message
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/20 dark:to-purple-950/20 p-4 sm:p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(-1)}
-              className="p-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-200">
-                Upgrade to Pro
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 text-lg">
-                Complete your subscription to unlock unlimited features
-              </p>
-            </div>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Redirecting to Payment...
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+            You're being redirected to our secure payment processor to complete your Pro upgrade.
+          </p>
+          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              If you're not redirected automatically, please wait a moment or refresh the page.
+            </p>
           </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
 
-          {/* Auto-redirect Message */}
-          {isAutoRedirecting && (
-            <Card className="rounded-xl border-0 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        {/* Plan Selection */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Choose Your Plan</CardTitle>
+            <CardDescription>
+              Select the billing cycle that works best for you
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  selectedPlan === 'monthly'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedPlan('monthly')}
+              >
+                <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-blue-800 dark:text-blue-200">
-                      Redirecting to Secure Checkout...
+                    <h3 className="font-semibold text-lg">Monthly</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Billed monthly</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatUSD(9.99)}
                     </div>
-                    <div className="text-sm text-blue-600 dark:text-blue-300">
-                      You'll be redirected to Paddle's secure payment page in a moment
-                    </div>
+                    <div className="text-sm text-gray-500">per month</div>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setIsAutoRedirecting(false)}
-                    className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-600 dark:hover:bg-blue-950/50"
-                  >
-                    Continue Manually
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
 
-          {/* Debug Information */}
-          {planFromUrl === 'pro' && (
-            <Card className="rounded-xl border-0 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800">
-              <CardContent className="pt-6">
-                <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <div><strong>Debug Info:</strong></div>
-                  <div>Plan from URL: {planFromUrl}</div>
-                  <div>Paddle Initialized: {isInitialized ? 'Yes' : 'No'}</div>
-                  <div>Paddle Loading: {paddleLoading ? 'Yes' : 'No'}</div>
-                  <div>Auto Redirecting: {isAutoRedirecting ? 'Yes' : 'No'}</div>
-                  <div>Selected Plan: {selectedPlan}</div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Plan Selection & Payment Form */}
-            <div className="space-y-6">
-              {/* Plan Selection */}
-              <Card className="rounded-xl border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-amber-500" />
-                    Choose Your Plan
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <Button
-                      variant={selectedPlan === 'monthly' ? 'default' : 'outline'}
-                      onClick={() => handlePlanChange('monthly')}
-                      className={`h-12 ${
-                        selectedPlan === 'monthly' 
-                          ? 'bg-blue-600 hover:bg-blue-700' 
-                          : 'border-slate-200 dark:border-slate-600'
-                      }`}
-                    >
-                      Monthly
-                    </Button>
-                    <Button
-                      variant={selectedPlan === 'yearly' ? 'default' : 'outline'}
-                      onClick={() => handlePlanChange('yearly')}
-                      className={`h-12 relative ${
-                        selectedPlan === 'yearly' 
-                          ? 'bg-green-600 hover:bg-green-700' 
-                          : 'border-slate-200 dark:border-slate-600'
-                      }`}
-                    >
-                      Yearly
-
-                    </Button>
+              <div
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  selectedPlan === 'yearly'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedPlan('yearly')}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">Yearly</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Billed annually</p>
+                    <Badge variant="secondary" className="mt-1">
+                      Save 20%
+                    </Badge>
                   </div>
-                  
-                  <div className="text-center p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                    <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">
-                      {formatUSD(currentPlan?.price || 0)}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatUSD(99.99)}
                     </div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      per {selectedPlan === 'monthly' ? 'month' : 'year'}
-                    </div>
-
+                    <div className="text-sm text-gray-500">per year</div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Payment Form */}
-              <Card className="rounded-xl border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    Payment Information
-                  </CardTitle>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Your payment information is secure and encrypted
+        {/* Features */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>What You'll Get</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium">Unlimited Transactions</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Track as many expenses and income sources as you need
                   </p>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">Card Number</Label>
-                      <Input
-                        id="cardNumber"
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        value={formData.cardNumber}
-                        onChange={(e) => handleInputChange('cardNumber', formatCardNumber(e.target.value))}
-                        maxLength={19}
-                        required
-                        className="h-12"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Expiry Date</Label>
-                        <Input
-                          id="expiryDate"
-                          type="text"
-                          placeholder="MM/YY"
-                          value={formData.expiryDate}
-                          onChange={(e) => handleInputChange('expiryDate', formatExpiryDate(e.target.value))}
-                          maxLength={5}
-                          required
-                          className="h-12"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">CVV</Label>
-                        <Input
-                          id="cvv"
-                          type="text"
-                          placeholder="123"
-                          value={formData.cvv}
-                          onChange={(e) => handleInputChange('cvv', e.target.value.replace(/\D/g, ''))}
-                          maxLength={4}
-                          required
-                          className="h-12"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="cardholderName">Cardholder Name</Label>
-                      <Input
-                        id="cardholderName"
-                        type="text"
-                        placeholder="John Doe"
-                        value={formData.cardholderName}
-                        onChange={(e) => handleInputChange('cardholderName', e.target.value)}
-                        required
-                        className="h-12"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        required
-                        className="h-12"
-                      />
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="acceptTerms"
-                        checked={formData.acceptTerms}
-                        onChange={(e) => handleInputChange('acceptTerms', e.target.checked)}
-                        className="rounded border-slate-300"
-                      />
-                      <Label htmlFor="acceptTerms" className="text-sm text-slate-600 dark:text-slate-400">
-                        I agree to the{' '}
-                        <button
-                          type="button"
-                          onClick={() => navigate('/terms')}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Terms of Service
-                        </button>
-                        {' '}and{' '}
-                        <button
-                          type="button"
-                          onClick={() => navigate('/privacy')}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Privacy Policy
-                        </button>
-                      </Label>
-                    </div>
-                    
-                    <Button
-                      type="submit"
-                      disabled={isProcessing || !formData.acceptTerms || paddleLoading || !isInitialized}
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-lg rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {paddleLoading ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Initializing Payment System...
-                        </div>
-                      ) : isProcessing ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Opening Checkout...
-                        </div>
-                      ) : !isInitialized ? (
-                        'Payment System Loading...'
-                      ) : (
-                        `Subscribe for ${formatUSD(currentPlan?.price || 0)}/${selectedPlan === 'monthly' ? 'month' : 'year'}`
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <Zap className="w-6 h-6 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium">AI Financial Coach</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Get personalized financial advice and insights
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <CreditCard className="w-6 h-6 text-purple-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium">Advanced Reports</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Detailed analytics and spending patterns
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <Shield className="w-6 h-6 text-orange-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium">Priority Support</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Get help when you need it most
+                  </p>
+                </div>
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Order Summary & Features */}
-            <div className="space-y-6">
-              {/* Order Summary */}
-              <Card className="rounded-xl border-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 backdrop-blur-sm shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-200">
-                    Order Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600 dark:text-slate-400">Pro Plan ({selectedPlan})</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatUSD(currentPlan?.price || 0)}
-                      </span>
-                    </div>
+        {/* Checkout Button */}
+        <div className="text-center">
+          <Button
+            onClick={handleCheckout}
+            disabled={!isInitialized || isProcessing || paddleLoading}
+            size="lg"
+            className="px-8 py-3 text-lg"
+          >
+            {isProcessing ? (
+              'Processing...'
+            ) : paddleLoading ? (
+              'Loading Payment System...'
+            ) : (
+              `Upgrade to Pro - ${selectedPlan === 'monthly' ? formatUSD(9.99) : formatUSD(99.99)}`
+            )}
+          </Button>
+          
+          {!isInitialized && (
+            <p className="text-sm text-gray-500 mt-2">
+              Payment system is initializing...
+            </p>
+          )}
+        </div>
 
-                    <div className="border-t border-slate-200 dark:border-slate-600 pt-3">
-                      <div className="flex justify-between items-center text-lg font-bold">
-                        <span>Total</span>
-                        <span className="text-blue-600 dark:text-blue-400">
-                          {formatUSD(currentPlan?.price || 0)}
-                        </span>
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {selectedPlan === 'monthly' ? 'Billed monthly' : 'One-time annual payment'}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pro Features */}
-              <Card className="rounded-xl border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <Star className="w-5 h-5 text-amber-500" />
-                    Pro Features
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {currentPlan?.features.map((feature, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <feature.icon className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {feature.name}
-                          </div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">
-                            {feature.description}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Security & Trust */}
-              <Card className="rounded-xl border-0 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Shield className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-green-800 dark:text-green-200">
-                      Secure & Trusted
-                    </span>
-                  </div>
-                  <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
-                    <div>• 256-bit SSL encryption</div>
-                    <div>• PCI DSS compliant</div>
-                    <div>• 30-day money-back guarantee</div>
-                    <div>• Cancel anytime, no questions asked</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+        {/* Security Notice */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-500">
+            🔒 Your payment information is secure and encrypted
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Powered by Paddle - PCI DSS Level 1 compliant
+          </p>
         </div>
       </div>
     </DashboardLayout>

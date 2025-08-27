@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
-import { usePaddle } from '@/contexts/PaddleContext';
+
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePaddle } from '@/contexts/PaddleContext';
 import { useNavigate } from 'react-router-dom';
+import { useUpgrade } from '@/hooks/useUpgrade';
 
 interface PricingCardsProps {
   showComparison?: boolean;
@@ -24,10 +26,11 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
 }) => {
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
-  const { plans: pricingPlans } = usePricing();
+    const { plans: pricingPlans } = usePricing();
   const { openCheckout, isInitialized } = usePaddle();
   const { formatCurrency } = useSettings();
   const navigate = useNavigate();
+  const { handleUpgrade } = useUpgrade();
   
   // Force USD formatting for pricing cards
   const formatUSD = (amount: number): string => {
@@ -91,14 +94,9 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
     };
   });
 
-  const handleUpgrade = async (planName: string) => {
+  const handleUpgradeClick = async (planName: string) => {
     if (planName === 'Pro') {
-      try {
-        // Navigate to checkout page with plan parameter for auto-redirect
-        navigate(`/checkout?plan=pro`);
-      } catch (error) {
-        console.error('Failed to navigate to checkout:', error);
-      }
+      await handleUpgrade(billingCycle);
     }
   };
 
@@ -207,7 +205,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
 
             <CardFooter className="flex flex-col space-y-3">
               <Button
-                onClick={() => handleUpgrade(plan.name)}
+                                    onClick={() => handleUpgradeClick(plan.name)}
                 variant={plan.buttonVariant as any}
                 size="lg"
                 className="w-full"

@@ -8,6 +8,7 @@ import { PricingProvider } from "@/contexts/PricingContext";
 import { PackageDescriptionsProvider } from "@/contexts/PackageDescriptionsContext";
 import { PlanFeaturesProvider } from "@/contexts/PlanFeaturesContext";
 import { PaddleProvider } from "@/contexts/PaddleContext";
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/react";
@@ -18,6 +19,8 @@ import './i18n';
 import Homepage1 from "./pages/Homepage1";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
+
+
 
 import Contact from "./pages/Contact";
 import Careers from "./pages/Careers";
@@ -43,8 +46,9 @@ import Transactions from "./pages/Transactions";
 
 import CategoriesBudget from "./pages/CategoriesBudget";
 import AIFinancialCoach from "./pages/AIFinancialCoach";
-import Subscription from "./pages/Subscription";
-import Checkout from "./pages/Checkout";
+import SubscriptionManagement from "./pages/SubscriptionManagement";
+import CheckoutPro from "./pages/CheckoutPro";
+
 
 import Reports from "./pages/Reports";
 import ButtonTest from "./pages/ButtonTest";
@@ -163,6 +167,8 @@ const AppContent = () => {
                   <Route path="/" element={<Homepage1 />} />
                   <Route path="/features" element={<Features />} />
                   <Route path="/pricing" element={<Pricing />} />
+                  
+                  
 
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/careers" element={<Careers />} />
@@ -205,6 +211,18 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/subscription" element={
+                    <ProtectedRoute>
+                      <SubscriptionManagement />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/checkoutpro" element={
+                    <ProtectedRoute>
+                      <CheckoutPro />
+                    </ProtectedRoute>
+                  } />
+
           
                   <Route path="/reports" element={
                     <ProtectedRoute>
@@ -222,17 +240,6 @@ const AppContent = () => {
                       <Profile />
                     </ProtectedRoute>
                   } />
-                  <Route path="/subscription" element={
-                    <ProtectedRoute>
-                      <Subscription />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/checkout" element={
-                    <ProtectedRoute>
-                      <Checkout />
-                    </ProtectedRoute>
-                  } />
-
 
                   <Route path="/help" element={<Help />} />
                   <Route path="/privacy" element={<Privacy />} />

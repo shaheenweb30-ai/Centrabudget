@@ -28,6 +28,10 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUpgrade } from "@/hooks/useUpgrade";
+import PaddleConfigTest from "@/components/PaddleConfigTest";
+import { PaddleDebug } from "@/components/PaddleDebug";
+import { PaddleDiagnostic } from "@/components/PaddleDiagnostic";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("preferences");
@@ -42,6 +46,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { preferences, updatePreferences } = useSettings();
   const { currentPlan, isLoading: planLoading } = useUserPlan();
+  const { handleUpgrade } = useUpgrade();
 
   // All hooks must be called before any conditional returns
   const [preferencesForm, setPreferencesForm] = useState({
@@ -298,7 +303,7 @@ export default function Settings() {
           <Card className="rounded-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg border border-white/20 dark:border-slate-700/30">
             <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-100/50 dark:bg-slate-700/50 p-1 rounded-lg m-6">
+                <TabsList className="grid w-full grid-cols-4 bg-slate-100/50 dark:bg-slate-700/50 p-1 rounded-lg m-6">
                   <TabsTrigger value="preferences" className="rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
                     <Palette className="w-4 h-4 mr-2" />
                     Preferences
@@ -310,6 +315,10 @@ export default function Settings() {
                   <TabsTrigger value="admin" className="rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
                     <Shield className="w-4 h-4 mr-2" />
                     Admin
+                  </TabsTrigger>
+                  <TabsTrigger value="paddle-test" className="rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Paddle Test
                   </TabsTrigger>
                 </TabsList>
 
@@ -503,7 +512,7 @@ export default function Settings() {
                       <Button 
                         variant="outline" 
                         className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600"
-                        onClick={() => navigate('/checkout?plan=pro')}
+                        onClick={() => handleUpgrade('monthly')}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Upgrade to Pro
@@ -545,6 +554,17 @@ export default function Settings() {
                       </CardContent>
                     </Card>
                   </div>
+                </TabsContent>
+
+                {/* Paddle Test Tab */}
+                <TabsContent value="paddle-test" className="p-6 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Paddle Configuration Test</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Verify your Paddle payment configuration</p>
+                  </div>
+                  <PaddleDiagnostic />
+                  <PaddleDebug />
+                  <PaddleConfigTest />
                 </TabsContent>
               </Tabs>
             </CardContent>

@@ -230,7 +230,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       '/insights',
       '/profile',
       '/settings',
-      '/subscription',
+
       '/help'
     ];
     

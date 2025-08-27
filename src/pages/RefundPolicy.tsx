@@ -30,7 +30,7 @@ const RefundPolicy = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                We want you to be happy with Centrabudget. If you're not satisfied, you can request a refund within 14 days of purchase, in line with Paddle's Buyer Terms.
+                We want you to be happy with Centrabudget. If you're not satisfied, you can request a refund within 14 days of purchase.
               </p>
             </CardContent>
           </Card>
@@ -114,7 +114,7 @@ const RefundPolicy = () => {
               </div>
 
               <p className="text-slate-700 dark:text-slate-300">
-                We'll review and respond within <span className="font-semibold">3–5 business days</span>. If approved, Paddle (our payment provider) will process the refund to your original payment method. Timing may vary by bank/card issuer.
+                We'll review and respond within <span className="font-semibold">3–5 business days</span>. If approved, we will process the refund to your original payment method. Timing may vary by bank/card issuer.
               </p>
             </CardContent>
           </Card>

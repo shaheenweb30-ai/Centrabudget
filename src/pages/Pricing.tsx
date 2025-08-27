@@ -7,10 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
-import { usePaddle } from '@/contexts/PaddleContext';
+
 import { usePackageDescriptions } from '@/contexts/PackageDescriptionsContext';
 import { usePlanFeatures } from '@/contexts/PlanFeaturesContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useToast } from '@/hooks/use-toast';
+import { usePaddle } from '@/contexts/PaddleContext';
+import { useUpgrade } from '@/hooks/useUpgrade';
+import { SubscriptionPlanPopup } from '@/components/SubscriptionPlanPopup';
 import Layout from '@/components/Layout';
 
 const Pricing: React.FC = () => {
@@ -18,7 +22,10 @@ const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
+  const { toast } = useToast();
   const { openCheckout, isInitialized } = usePaddle();
+  const { showUpgradePopup, hideUpgradePopup, handlePlanSelection, showPlanPopup } = useUpgrade();
+
 
   
   // Force USD formatting for pricing page
@@ -161,8 +168,8 @@ const Pricing: React.FC = () => {
     } else if (planName === 'Pro') {
       if (user) {
         if (isFreePlan) {
-          // Logged in user upgrading from free to pro - redirect to checkout with plan parameter
-          navigate(`/checkout?plan=pro`);
+          // Show the plan selection popup
+          showUpgradePopup();
         } else {
           // Already on pro plan - redirect to dashboard
           navigate('/dashboard');
@@ -334,7 +341,7 @@ const Pricing: React.FC = () => {
 
                     <CardFooter className="px-6 pb-6">
                       <Button
-                        onClick={() => handleUpgrade(plan.name)}
+                        onClick={async () => await handleUpgrade(plan.name)}
                         variant={plan.buttonVariant as any}
                         size="lg"
                         className={`
@@ -527,10 +534,10 @@ const Pricing: React.FC = () => {
                 <div className="group relative">
                   <div className="absolute -inset-1 bg-gradient-to-r from-white to-gray-100 rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
                       if (user) {
                         if (isFreePlan) {
-                          navigate('/checkout');
+                          showUpgradePopup();
                         } else {
                           navigate('/dashboard');
                         }
@@ -584,6 +591,14 @@ const Pricing: React.FC = () => {
           </div>
         </section>
       </div>
+
+      {/* Subscription Plan Selection Popup */}
+      <SubscriptionPlanPopup
+        isOpen={showPlanPopup}
+        onClose={hideUpgradePopup}
+        onSelectPlan={handlePlanSelection}
+        isLoading={false}
+      />
     </Layout>
   );
 };

@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 import { useTransactions } from "@/contexts/TransactionContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useUpgrade } from "@/hooks/useUpgrade";
 import UpgradePopup from "@/components/UpgradePopup";
 
 const categoryOptions = [
@@ -44,6 +45,7 @@ const Transactions = () => {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { isFreePlan, limits } = useUserPlan();
   const { formatCurrency } = useSettings();
+  const { handleUpgrade } = useUpgrade();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showUpgradePopup, setShowUpgradePopup] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -253,11 +255,7 @@ const Transactions = () => {
                           <Button 
                             variant="link" 
                             className="p-0 h-auto text-orange-800 dark:text-orange-200 underline"
-                            onClick={() => {
-                              setShowAddForm(false);
-                              setLimitType('transactions');
-                              setShowUpgradePopup(true);
-                            }}
+                            onClick={() => handleUpgrade('monthly')}
                           >
                             Upgrade to Pro
                           </Button> for unlimited transactions.

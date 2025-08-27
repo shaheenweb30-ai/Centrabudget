@@ -2,6 +2,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Crown, Sparkles, ArrowRight, X } from 'lucide-react';
+import { useUpgrade } from '@/hooks/useUpgrade';
 import { useNavigate } from 'react-router-dom';
 
 interface UpgradePopupProps {
@@ -20,6 +21,7 @@ const UpgradePopup: React.FC<UpgradePopupProps> = ({
   maxCount
 }) => {
   const navigate = useNavigate();
+  const { handleUpgrade } = useUpgrade();
 
   const getLimitMessage = () => {
     switch (limitType) {
@@ -51,8 +53,8 @@ const UpgradePopup: React.FC<UpgradePopupProps> = ({
     }
   };
 
-  const handleUpgrade = () => {
-    navigate('/checkout?plan=pro');
+  const handleUpgradeClick = () => {
+    handleUpgrade('monthly');
     onClose();
   };
 
@@ -119,7 +121,7 @@ const UpgradePopup: React.FC<UpgradePopupProps> = ({
           {/* Action Buttons */}
           <div className="flex flex-col gap-2">
             <Button 
-              onClick={handleUpgrade}
+              onClick={handleUpgradeClick}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
             >
               <Crown className="w-4 h-4 mr-2" />

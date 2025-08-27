@@ -46,6 +46,7 @@ import { useNavigate } from "react-router-dom";
 import { useTransactions } from "@/contexts/TransactionContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useUpgrade } from "@/hooks/useUpgrade";
 import UpgradePopup from "@/components/UpgradePopup";
 
 const Reports = () => {
@@ -53,6 +54,7 @@ const Reports = () => {
   const { transactions, categories } = useTransactions();
   const { isFreePlan, limits } = useUserPlan();
   const { formatCurrency } = useSettings();
+  const { handleUpgrade } = useUpgrade();
   const [showUpgradePopup, setShowUpgradePopup] = useState(false);
   
   const [selectedReportType, setSelectedReportType] = useState<'overview' | 'detailed' | 'custom'>('overview');
@@ -268,7 +270,7 @@ const Reports = () => {
 
                 <div className="space-y-4">
                   <Button 
-                    onClick={() => setShowUpgradePopup(true)}
+                                                onClick={() => handleUpgrade('monthly')}
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     <Crown className="w-4 h-4 mr-2" />

@@ -35,6 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { useTransactions } from "@/contexts/TransactionContext";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useUpgrade } from "@/hooks/useUpgrade";
 import UpgradePopup from "@/components/UpgradePopup";
 import {
   DropdownMenu,
@@ -49,6 +50,7 @@ const CategoriesBudget = () => {
   const { categories, setBudget, deleteTransaction, deleteCategory, addTransaction } = useTransactions();
   const { isFreePlan, limits } = useUserPlan();
   const { preferences, formatCurrency } = useSettings();
+  const { handleUpgrade } = useUpgrade();
   const [showUpgradePopup, setShowUpgradePopup] = useState(false);
   
   // State for categories and budgets
@@ -604,10 +606,7 @@ const CategoriesBudget = () => {
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-orange-800 dark:text-orange-200 underline"
-                        onClick={() => {
-                          setShowAddBudget(false);
-                          setShowUpgradePopup(true);
-                        }}
+                        onClick={() => handleUpgrade('monthly')}
                       >
                         Upgrade to Pro
                       </Button> for unlimited budgets.
@@ -716,10 +715,7 @@ const CategoriesBudget = () => {
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-orange-800 dark:text-orange-200 underline"
-                        onClick={() => {
-                          setShowAddCategory(false);
-                          setShowUpgradePopup(true);
-                        }}
+                        onClick={() => handleUpgrade('monthly')}
                       >
                         Upgrade to Pro
                       </Button> for unlimited categories.
