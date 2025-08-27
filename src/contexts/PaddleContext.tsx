@@ -54,63 +54,41 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         console.log('✅ Browser environment check passed');
 
         // Check if Paddle SDK is available
-        if (typeof initializePaddle !== 'function' || typeof getPaddleInstance !== 'function') {
+        if (typeof initializePaddle !== 'function') {
           console.error('❌ Paddle SDK functions not available:', {
-            initializePaddle: typeof initializePaddle,
-            getPaddleInstance: typeof getPaddleInstance
+            initializePaddle: typeof initializePaddle
           });
           throw new Error('Paddle SDK is not properly loaded');
         }
         console.log('✅ Paddle SDK functions available');
-        
-        // Wait for Paddle to be ready
-        if (typeof window !== 'undefined' && (window as any).Paddle) {
-          console.log('🌍 Global Paddle object found, waiting for it to be ready...');
-          // Give Paddle a moment to fully initialize
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
 
         // Validate configuration
         console.log('🔍 Validating Paddle configuration...');
         if (!validatePaddleConfig()) {
-          throw new Error('Paddle configuration is incomplete. Please check your environment variables.');
+          throw new Error('Paddle configuration is invalid');
         }
         console.log('✅ Paddle configuration validated');
 
-        // Initialize Paddle using the v1 API
-        const clientId = PADDLE_CONFIG.clientId;
-        if (!clientId) {
-          throw new Error('Paddle Client ID is required');
+        // Initialize Paddle using the v2 API with token instead of clientId
+        const token = PADDLE_CONFIG.clientId; // Your client ID is the token
+        if (!token) {
+          throw new Error('Paddle token is required');
         }
         
-        console.log('🔑 Initializing Paddle with client ID:', '***' + clientId.slice(-4));
-        console.log('🌍 Paddle environment:', PADDLE_CONFIG.environment);
-        console.log('📦 Paddle products:', PADDLE_CONFIG.products);
+        console.log('🔑 Initializing Paddle with token:', '***' + token.slice(-4));
+        console.log(' Paddle environment:', PADDLE_CONFIG.environment);
         
-        // First, set the Paddle environment globally
-        if (typeof window !== 'undefined' && (window as any).Paddle) {
-          try {
-            (window as any).Paddle.Environment.set(PADDLE_CONFIG.environment as 'sandbox' | 'production');
-            console.log('🌍 Paddle environment set globally');
-          } catch (envError) {
-            console.warn('⚠️ Could not set global Paddle environment:', envError);
-          }
-        }
-        
-        // Initialize Paddle
-        await initializePaddle({
+        // Initialize Paddle with v2 API
+        const paddleInstance = await initializePaddle({
           environment: PADDLE_CONFIG.environment as 'sandbox' | 'production',
-          clientId: clientId,
+          token: token, // Use token instead of clientId
         });
-        console.log('✅ Paddle.initialize() completed');
-
-        // Get the Paddle instance - explicitly use v1 API
-        const paddleInstance = getPaddleInstance('v1');
-        console.log('🔍 Paddle v1 instance retrieved:', paddleInstance);
         
         if (!paddleInstance) {
-          throw new Error('Failed to get Paddle instance');
+          throw new Error('Failed to initialize Paddle');
         }
+        
+        console.log('✅ Paddle initialized successfully:', paddleInstance);
         
         // Verify the instance has the required methods
         if (!paddleInstance.Checkout || typeof paddleInstance.Checkout.open !== 'function') {
@@ -121,7 +99,7 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setPaddle(paddleInstance);
         setIsInitialized(true);
         
-        console.log('🎉 Paddle initialized successfully!', paddleInstance);
+        console.log(' Paddle initialized successfully!', paddleInstance);
         console.log('🛒 Paddle.Checkout methods:', Object.keys(paddleInstance.Checkout || {}));
       } catch (err) {
         console.error('💥 Failed to initialize Paddle:', err);
@@ -171,7 +149,7 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         throw new Error(`Product ID not found for ${planId} ${billingCycle}. Please check your Paddle product configuration.`);
       }
 
-      // Prepare checkout data
+      // Prepare checkout data for v2 API
       const checkoutData = {
         items: [
           {
@@ -190,12 +168,6 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       };
       
-      // Add client token to checkout data
-      if (PADDLE_CONFIG.clientId) {
-        checkoutData.clientToken = PADDLE_CONFIG.clientId;
-      }
-      
-      // Open Paddle checkout using the v1 API
       console.log('Opening Paddle checkout with data:', checkoutData);
       console.log('Paddle instance available:', !!paddle);
       console.log('Paddle.Checkout available:', !!paddle?.Checkout);
@@ -206,17 +178,9 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
       
       try {
-        // Use v1 API checkout method with settings
-        const checkoutSettings = {
-          displayMode: 'overlay',
-          successUrl: window.location.origin + '/subscription?success=true',
-          cancelUrl: window.location.origin + '/pricing?canceled=true',
-          // Add client token to settings as well
-          clientToken: PADDLE_CONFIG.clientId
-        };
-        
-        paddle.Checkout.open(checkoutData, checkoutSettings);
-        console.log('Paddle checkout opened successfully with settings');
+        // Use v2 API checkout method - no need for additional settings
+        paddle.Checkout.open(checkoutData);
+        console.log('Paddle checkout opened successfully');
       } catch (checkoutError) {
         console.error('Failed to open Paddle checkout:', checkoutError);
         throw new Error('Failed to open checkout: ' + (checkoutError instanceof Error ? checkoutError.message : 'Unknown error'));
