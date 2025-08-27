@@ -86,9 +86,9 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
         console.log('✅ Paddle.initialize() completed');
 
-        // Get the Paddle instance
-        const paddleInstance = getPaddleInstance();
-        console.log('🔍 Paddle instance retrieved:', paddleInstance);
+        // Get the Paddle instance - explicitly use v1 API
+        const paddleInstance = getPaddleInstance('v1');
+        console.log('🔍 Paddle v1 instance retrieved:', paddleInstance);
         
         if (!paddleInstance) {
           throw new Error('Failed to get Paddle instance');
@@ -172,7 +172,7 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       };
 
-      // Open Paddle checkout using the correct API
+      // Open Paddle checkout using the correct API with settings
       console.log('Opening Paddle checkout with data:', checkoutData);
       console.log('Paddle instance available:', !!paddle);
       console.log('Paddle.Checkout available:', !!paddle?.Checkout);
@@ -182,9 +182,18 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         throw new Error('Paddle checkout is not available');
       }
       
+      // Prepare checkout settings with success/cancel URLs
+      const checkoutSettings = {
+        displayMode: 'overlay',
+        successUrl: window.location.origin + '/subscription?success=true',
+        cancelUrl: window.location.origin + '/pricing?canceled=true'
+      };
+      
+      console.log('Checkout settings:', checkoutSettings);
+      
       try {
-        paddle.Checkout.open(checkoutData);
-        console.log('Paddle checkout opened successfully');
+        paddle.Checkout.open(checkoutData, checkoutSettings);
+        console.log('Paddle checkout opened successfully with settings');
       } catch (checkoutError) {
         console.error('Failed to open Paddle checkout:', checkoutError);
         throw new Error('Failed to open checkout: ' + (checkoutError instanceof Error ? checkoutError.message : 'Unknown error'));
