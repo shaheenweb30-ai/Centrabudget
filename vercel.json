@@ -1,30 +1,9 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self' https://cdn.paddle.com https://sandbox-cdn.paddle.com; script-src 'self' 'unsafe-inline' https: https://vitals.vercel-insights.com https://cdn.paddle.com https://sandbox-cdn.paddle.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.paddle.com https://sandbox-cdn.paddle.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: https://cdn.paddle.com https://sandbox-cdn.paddle.com; frame-src https://*.paddle.com https://*.paddle.dev; object-src 'none'; base-uri 'self';"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
+  "functions": {
+    "api/paddle-webhook.ts": {
+      "maxDuration": 30
     }
-  ]
+  }
 }
 
 

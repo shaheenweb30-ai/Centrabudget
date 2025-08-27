@@ -1,3 +1,4 @@
+// api/paddle-webhook.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
@@ -17,10 +18,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Enhanced logging for debugging
+    console.log('🔍 Paddle webhook received:', {
+      method: req.method,
+      headers: req.headers,
+      bodySize: JSON.stringify(req.body).length,
+      timestamp: new Date().toISOString()
+    });
+
     // Verify webhook signature
     const signature = req.headers['paddle-signature'] as string;
     if (!signature || !PADDLE_WEBHOOK_SECRET) {
-      console.error('Missing webhook signature or secret');
+      console.error('❌ Missing webhook signature or secret');
+      console.error('Signature:', signature ? 'Present' : 'Missing');
+      console.error('Secret:', PADDLE_WEBHOOK_SECRET ? 'Set' : 'Missing');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -32,12 +43,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .digest('hex');
 
     if (signature !== expectedSignature) {
-      console.error('Invalid webhook signature');
+      console.error('❌ Invalid webhook signature');
+      console.error('Expected:', expectedSignature);
+      console.error('Received:', signature);
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
+    console.log('✅ Webhook signature verified successfully');
+
     const event = req.body;
-    console.log('Received Paddle webhook:', event.event_type, event.data);
+    console.log('📡 Processing webhook event:', {
+      event_type: event.event_type,
+      subscription_id: event.data?.subscription_id,
+      customer_id: event.data?.customer_id,
+      custom_data: event.data?.custom_data
+    });
 
     // Handle different webhook events
     switch (event.event_type) {
@@ -70,12 +90,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
       
       default:
-        console.log('Unhandled webhook event:', event.event_type);
+        console.log('⚠️ Unhandled webhook event:', event.event_type);
     }
 
+    console.log('✅ Webhook processed successfully');
     res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Webhook handler error:', error);
+    console.error('💥 Webhook handler error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -116,6 +137,14 @@ async function handleSubscriptionCreated(data: any) {
     const planId = item.price_id.includes('monthly') ? 'pro' : 'pro'; // Adjust based on your price IDs
     const billingCycle = item.price_id.includes('monthly') ? 'monthly' : 'yearly';
 
+    console.log('🔍 Activating subscription:', {
+      userId,
+      planId,
+      billingCycle,
+      subscription_id,
+      customer_id
+    });
+
     // Activate user subscription
     const { data: result, error } = await supabase.rpc('activate_user_subscription', {
       p_user_id: userId,
@@ -126,12 +155,14 @@ async function handleSubscriptionCreated(data: any) {
     });
 
     if (error) {
-      console.error('Failed to activate subscription:', error);
+      console.error('❌ Failed to activate subscription:', error);
+      throw error;
     } else {
-      console.log('Subscription activated successfully:', result);
+      console.log('✅ Subscription activated successfully:', result);
     }
   } catch (error) {
-    console.error('Error handling subscription created:', error);
+    console.error('❌ Error handling subscription created:', error);
+    throw error;
   }
 }
 
@@ -139,19 +170,30 @@ async function handleSubscriptionUpdated(data: any) {
   try {
     const { subscription_id, status, next_billed_at } = data;
     
+    console.log('📡 Processing subscription.updated:', {
+      subscription_id,
+      status,
+      next_billed_at
+    });
+    
     // Update subscription status if needed
     if (status === 'active') {
       // Subscription was reactivated
-      console.log('Subscription reactivated:', subscription_id);
+      console.log('✅ Subscription reactivated:', subscription_id);
     }
   } catch (error) {
-    console.error('Error handling subscription updated:', error);
+    console.error('❌ Error handling subscription updated:', error);
   }
 }
 
 async function handleSubscriptionCancelled(data: any) {
   try {
     const { subscription_id, scheduled_change } = data;
+    
+    console.log('📡 Processing subscription.cancelled:', {
+      subscription_id,
+      scheduled_change
+    });
     
     // Find user by subscription ID
     const { data: subscription, error } = await supabase
@@ -161,7 +203,7 @@ async function handleSubscriptionCancelled(data: any) {
       .single();
 
     if (error || !subscription) {
-      console.error('Subscription not found:', subscription_id);
+      console.error('❌ Subscription not found:', subscription_id);
       return;
     }
 
@@ -172,18 +214,20 @@ async function handleSubscriptionCancelled(data: any) {
     });
 
     if (cancelError) {
-      console.error('Failed to cancel subscription:', cancelError);
+      console.error('❌ Failed to cancel subscription:', cancelError);
     } else {
-      console.log('Subscription cancelled successfully:', result);
+      console.log('✅ Subscription cancelled successfully:', result);
     }
   } catch (error) {
-    console.error('Error handling subscription cancelled:', error);
+    console.error('❌ Error handling subscription cancelled:', error);
   }
 }
 
 async function handleSubscriptionPaused(data: any) {
   try {
     const { subscription_id } = data;
+    
+    console.log('📡 Processing subscription.paused:', { subscription_id });
     
     // Update subscription status to paused
     const { error } = await supabase
@@ -192,18 +236,20 @@ async function handleSubscriptionPaused(data: any) {
       .eq('paddle_subscription_id', subscription_id);
 
     if (error) {
-      console.error('Failed to pause subscription:', error);
+      console.error('❌ Failed to pause subscription:', error);
     } else {
-      console.log('Subscription paused successfully:', subscription_id);
+      console.log('✅ Subscription paused successfully:', subscription_id);
     }
   } catch (error) {
-    console.error('Error handling subscription paused:', error);
+    console.error('❌ Error handling subscription paused:', error);
   }
 }
 
 async function handleSubscriptionResumed(data: any) {
   try {
     const { subscription_id } = data;
+    
+    console.log('📡 Processing subscription.resumed:', { subscription_id });
     
     // Update subscription status to active
     const { error } = await supabase
@@ -212,18 +258,23 @@ async function handleSubscriptionResumed(data: any) {
       .eq('paddle_subscription_id', subscription_id);
 
     if (error) {
-      console.error('Failed to resume subscription:', error);
+      console.error('❌ Failed to resume subscription:', error);
     } else {
-      console.log('Subscription resumed successfully:', subscription_id);
+      console.log('✅ Subscription resumed successfully:', subscription_id);
     }
   } catch (error) {
-    console.error('Error handling subscription resumed:', error);
+    console.error('❌ Error handling subscription resumed:', error);
   }
 }
 
 async function handlePaymentSucceeded(data: any) {
   try {
     const { subscription_id, items, next_billed_at } = data;
+    
+    console.log('📡 Processing subscription.payment_succeeded:', {
+      subscription_id,
+      next_billed_at
+    });
     
     // Find subscription and update billing period
     const { data: subscription, error } = await supabase
@@ -233,7 +284,7 @@ async function handlePaymentSucceeded(data: any) {
       .single();
 
     if (error || !subscription) {
-      console.error('Subscription not found for payment:', subscription_id);
+      console.error('❌ Subscription not found for payment:', subscription_id);
       return;
     }
 
@@ -259,18 +310,20 @@ async function handlePaymentSucceeded(data: any) {
       .eq('id', subscription.id);
 
     if (updateError) {
-      console.error('Failed to update subscription billing period:', updateError);
+      console.error('❌ Failed to update subscription billing period:', updateError);
     } else {
-      console.log('Subscription billing period updated successfully:', subscription_id);
+      console.log('✅ Subscription billing period updated successfully:', subscription_id);
     }
   } catch (error) {
-    console.error('Error handling payment succeeded:', error);
+    console.error('❌ Error handling payment succeeded:', error);
   }
 }
 
 async function handlePaymentFailed(data: any) {
   try {
     const { subscription_id } = data;
+    
+    console.log('📡 Processing subscription.payment_failed:', { subscription_id });
     
     // Update subscription status to past_due
     const { error } = await supabase
@@ -279,11 +332,11 @@ async function handlePaymentFailed(data: any) {
       .eq('paddle_subscription_id', subscription_id);
 
     if (error) {
-      console.error('Failed to update subscription status to past_due:', error);
+      console.error('❌ Failed to update subscription status to past_due:', error);
     } else {
-      console.log('Subscription status updated to past_due:', subscription_id);
+      console.log('✅ Subscription status updated to past_due:', subscription_id);
     }
   } catch (error) {
-    console.error('Error handling payment failed:', error);
+    console.error('❌ Error handling payment failed:', error);
   }
 }
