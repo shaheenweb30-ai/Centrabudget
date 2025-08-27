@@ -263,37 +263,13 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       logPaddleCheckout(checkoutData, user);
       logPaddleEnvironment();
 
-      // Alternative checkout format - try without mode first
-      const simpleCheckoutData = {
-        items: [
-          {
-            price_id: productId,
-            quantity: 1
-          }
-        ],
-        customer: {
-          email: user.email
-        },
-        success_url: PADDLE_CONFIG.successUrl,
-        cancel_url: PADDLE_CONFIG.cancelUrl
-      };
-
-      // Minimal checkout format - just the essentials
-      const minimalCheckoutData = {
-        items: [
-          {
-            price_id: productId,
-            quantity: 1
-          }
-        ],
-        success_url: PADDLE_CONFIG.successUrl,
-        cancel_url: PADDLE_CONFIG.cancelUrl
-      };
+      // Note: We use the full checkout data to ensure custom_data (including userId) is passed
 
       // Log the exact data being sent for debugging
       console.log('🔍 Final checkout data:', JSON.stringify(checkoutData, null, 2));
       console.log('🔍 Product ID being used:', productId);
       console.log('🔍 Billing cycle:', billingCycle);
+      console.log('🔍 Custom data being sent:', checkoutData.custom_data);
       
       console.log('Opening Paddle checkout with data:', checkoutData);
       console.log('Paddle.Checkout available:', !!window.Paddle?.Checkout);
@@ -311,23 +287,10 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         console.log('🔍 Paddle.Checkout.open method:', typeof window.Paddle.Checkout.open);
         
         // Paddle v2 returns a Promise, so we need to await it
-        // Try multiple checkout formats to find one that works
-        let result;
-        try {
-          console.log('🔍 Trying minimal checkout format...');
-          result = await window.Paddle.Checkout.open(minimalCheckoutData);
-          console.log('✅ Paddle checkout opened successfully with minimal format', result);
-        } catch (minimalError) {
-          console.log('⚠️ Minimal format failed, trying simple format...', minimalError);
-          try {
-            result = await window.Paddle.Checkout.open(simpleCheckoutData);
-            console.log('✅ Paddle checkout opened successfully with simple format', result);
-          } catch (simpleError) {
-            console.log('⚠️ Simple format failed, trying full format...', simpleError);
-            result = await window.Paddle.Checkout.open(checkoutData);
-            console.log('✅ Paddle checkout opened successfully with full format', result);
-          }
-        }
+        // Use the full checkout data with custom_data to ensure userId is passed
+        console.log('🔍 Opening Paddle checkout with full data including custom_data...');
+        const result = await window.Paddle.Checkout.open(checkoutData);
+        console.log('✅ Paddle checkout opened successfully with full format', result);
       } catch (checkoutError) {
         console.error('❌ Failed to open Paddle checkout:', checkoutError);
         console.error('🔍 Checkout error details:', {

@@ -140,6 +140,10 @@ serve(async (req) => {
         await handleSubscriptionTrialing(supabase, event.data)
         break
       
+      case 'transaction.completed':
+        await handleTransactionCompleted(supabase, event.data)
+        break
+      
       default:
         console.log('⚠️ Unhandled webhook event:', event.event_type)
     }
@@ -174,6 +178,7 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
       customer_id,
       status,
       custom_data: data.custom_data,
+      custom_data_keys: data.custom_data ? Object.keys(data.custom_data) : [],
       items: items?.length || 0
     })
     
@@ -181,16 +186,25 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
     const customData = data.custom_data || {}
     const userId = customData.userId
     
+    console.log('🔍 Extracted custom data:', {
+      customData,
+      userId,
+      planId: customData.planId,
+      billingCycle: customData.billingCycle
+    })
+    
     if (!userId) {
       console.error('❌ No userId in custom data for subscription:', subscription_id)
       console.error('❌ Full custom_data:', customData)
+      console.error('❌ Custom data keys:', Object.keys(customData))
       return
     }
 
     // Determine plan and billing cycle from items
     const item = items[0]
-    const planId = item.price_id.includes('monthly') ? 'pro' : 'pro' // Adjust based on your price IDs
-    const billingCycle = item.price_id.includes('monthly') ? 'monthly' : 'yearly'
+    // Extract plan and billing cycle from custom_data if available, otherwise infer from price_id
+    const planId = customData.planId || (item.price_id.includes('monthly') ? 'pro' : 'pro')
+    const billingCycle = customData.billingCycle || (item.price_id.includes('monthly') ? 'monthly' : 'yearly')
 
     console.log('🔍 Activating subscription:', {
       userId,
@@ -502,5 +516,38 @@ async function handlePaymentRefunded(supabase: any, data: any) {
     // depending on your business logic
   } catch (error) {
     console.error('❌ Error handling payment refunded:', error)
+  }
+}
+
+async function handleTransactionCompleted(supabase: any, data: any) {
+  try {
+    const { id: transaction_id, subscription_id, customer_id, items, custom_data } = data
+    
+    console.log('📡 Processing transaction.completed:', {
+      transaction_id,
+      subscription_id,
+      customer_id,
+      custom_data,
+      custom_data_keys: custom_data ? Object.keys(custom_data) : []
+    })
+    
+    // If this is a subscription transaction, we might already have handled it
+    // via subscription.created, but let's log it for debugging
+    if (subscription_id) {
+      console.log('✅ Transaction completed for existing subscription:', subscription_id)
+      return
+    }
+    
+    // For one-time purchases, we could handle them here
+    // For now, just log the transaction
+    console.log('💰 One-time transaction completed:', {
+      transaction_id,
+      customer_id,
+      amount: items?.[0]?.totals?.total,
+      currency: items?.[0]?.totals?.currency_code
+    })
+    
+  } catch (error) {
+    console.error('❌ Error handling transaction completed:', error)
   }
 }

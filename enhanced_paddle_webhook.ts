@@ -138,8 +138,9 @@ async function handleSubscriptionCreated(data: any) {
 
     // Determine plan and billing cycle from items
     const item = items[0];
-    const planId = item.price_id.includes('monthly') ? 'pro' : 'pro'; // Adjust based on your price IDs
-    const billingCycle = item.price_id.includes('monthly') ? 'monthly' : 'yearly';
+    // Extract plan and billing cycle from custom_data if available, otherwise infer from price_id
+    const planId = customData.planId || (item.price_id.includes('monthly') ? 'pro' : 'pro');
+    const billingCycle = customData.billingCycle || (item.price_id.includes('monthly') ? 'monthly' : 'yearly');
 
     console.log('🔍 Activating subscription:', {
       userId,
