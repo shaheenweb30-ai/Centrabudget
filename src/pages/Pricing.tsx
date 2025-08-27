@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
+import { usePaddle } from '@/contexts/PaddleContext';
 import { usePackageDescriptions } from '@/contexts/PackageDescriptionsContext';
 import { usePlanFeatures } from '@/contexts/PlanFeaturesContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -17,6 +18,7 @@ const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
+  const { openCheckout, isInitialized } = usePaddle();
 
   
   // Force USD formatting for pricing page
@@ -147,7 +149,7 @@ const Pricing: React.FC = () => {
     }
   ];
 
-  const handleUpgrade = (planName: string) => {
+  const handleUpgrade = async (planName: string) => {
     if (planName === 'Free') {
       if (user) {
         // Logged in user on free plan - redirect to dashboard
@@ -159,8 +161,19 @@ const Pricing: React.FC = () => {
     } else if (planName === 'Pro') {
       if (user) {
         if (isFreePlan) {
-          // Logged in user upgrading from free to pro - redirect to checkout
-          navigate('/checkout');
+          // Logged in user upgrading from free to pro - use Paddle checkout
+          if (isInitialized) {
+            try {
+              await openCheckout('pro', billingCycle);
+            } catch (error) {
+              console.error('Failed to open checkout:', error);
+              // Fallback to checkout page if Paddle fails
+              navigate('/checkout');
+            }
+          } else {
+            // Paddle not ready, fallback to checkout page
+            navigate('/checkout');
+          }
         } else {
           // Already on pro plan - redirect to dashboard
           navigate('/dashboard');

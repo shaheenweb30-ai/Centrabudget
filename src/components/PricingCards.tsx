@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
+import { usePaddle } from '@/contexts/PaddleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 
 interface PricingCardsProps {
@@ -23,6 +24,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   const { user } = useAuth();
   const { isFreePlan, limits } = useUserPlan();
   const { plans: pricingPlans } = usePricing();
+  const { openCheckout, isInitialized } = usePaddle();
   const { formatCurrency } = useSettings();
   
   // Force USD formatting for pricing cards
@@ -87,10 +89,13 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
     };
   });
 
-  const handleUpgrade = (planName: string) => {
+  const handleUpgrade = async (planName: string) => {
     if (planName === 'Pro') {
-      // TODO: Implement Stripe checkout
-      console.log('Upgrade to Pro');
+      try {
+        await openCheckout('pro', billingCycle);
+      } catch (error) {
+        console.error('Failed to open checkout:', error);
+      }
     }
   };
 

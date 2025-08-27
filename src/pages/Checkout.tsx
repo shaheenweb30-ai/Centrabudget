@@ -24,6 +24,7 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
+import { usePaddle } from "@/contexts/PaddleContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +51,7 @@ const Checkout = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { formatCurrency } = useSettings();
+  const { openCheckout, isInitialized, isLoading: paddleLoading } = usePaddle();
   
   // Force USD formatting for checkout regardless of user preferences
   const formatUSD = (amount: number): string => {
@@ -178,21 +180,26 @@ const Checkout = () => {
       return;
     }
 
+    if (!isInitialized) {
+      toast({
+        title: "Payment System Not Ready",
+        description: "Please wait a moment for the payment system to initialize.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Open Paddle checkout
+      await openCheckout('pro', selectedPlan);
       
-      toast({
-        title: "Payment Successful!",
-        description: "Welcome to Pro! Your subscription is now active.",
-        variant: "default"
-      });
+      // Note: Paddle will handle the redirect to success/cancel URLs
+      // We don't need to navigate manually here
       
-      // Redirect to subscription page
-      navigate('/subscription');
     } catch (error) {
+      console.error('Checkout error:', error);
       toast({
         title: "Payment Failed",
         description: "There was an issue processing your payment. Please try again.",
@@ -393,14 +400,21 @@ const Checkout = () => {
                     
                     <Button
                       type="submit"
-                      disabled={isProcessing || !formData.acceptTerms}
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-lg rounded-lg"
+                      disabled={isProcessing || !formData.acceptTerms || paddleLoading || !isInitialized}
+                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-lg rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isProcessing ? (
+                      {paddleLoading ? (
                         <div className="flex items-center gap-2">
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Processing...
+                          Initializing Payment System...
                         </div>
+                      ) : isProcessing ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Opening Checkout...
+                        </div>
+                      ) : !isInitialized ? (
+                        'Payment System Loading...'
                       ) : (
                         `Subscribe for ${formatUSD(currentPlan?.price || 0)}/${selectedPlan === 'monthly' ? 'month' : 'year'}`
                       )}

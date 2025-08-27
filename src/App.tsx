@@ -7,6 +7,7 @@ import { TransactionProvider } from "@/contexts/TransactionContext";
 import { PricingProvider } from "@/contexts/PricingContext";
 import { PackageDescriptionsProvider } from "@/contexts/PackageDescriptionsContext";
 import { PlanFeaturesProvider } from "@/contexts/PlanFeaturesContext";
+import { PaddleProvider } from "@/contexts/PaddleContext";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/react";
@@ -150,13 +151,14 @@ const AppContent = () => {
         <BrowserRouter>
             <SettingsProvider>
               <TransactionProvider>
-                <PricingProvider>
-                  <PackageDescriptionsProvider>
-                    <PlanFeaturesProvider>
-                      <TooltipProvider>
-                      <Toaster />
-                      {import.meta.env.PROD && <Analytics />}
-                      <ScrollToTop />
+                                  <PricingProvider>
+                    <PackageDescriptionsProvider>
+                      <PlanFeaturesProvider>
+                        <PaddleProvider>
+                          <TooltipProvider>
+                          <Toaster />
+                          {import.meta.env.PROD && <Analytics />}
+                          <ScrollToTop />
                       <Routes>
                   <Route path="/" element={<Homepage1 />} />
                   <Route path="/features" element={<Features />} />
@@ -253,7 +255,8 @@ const AppContent = () => {
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                        </TooltipProvider>
+                          </TooltipProvider>
+                        </PaddleProvider>
                       </PlanFeaturesProvider>
                     </PackageDescriptionsProvider>
                   </PricingProvider>
