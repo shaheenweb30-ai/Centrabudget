@@ -73,6 +73,7 @@ const Checkout = () => {
   };
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAutoRedirecting, setIsAutoRedirecting] = useState(false);
   const [formData, setFormData] = useState({
     cardNumber: '',
     expiryDate: '',
@@ -85,11 +86,44 @@ const Checkout = () => {
   // Get plan from URL params
   const planFromUrl = searchParams.get('plan');
 
+  // Auto-redirect to Paddle checkout when plan is specified
   useEffect(() => {
-    if (planFromUrl === 'pro') {
-      // Plan is already selected, no need to change
+    console.log('Checkout useEffect triggered:', {
+      planFromUrl,
+      isInitialized,
+      paddleLoading,
+      selectedPlan
+    });
+    
+    if (planFromUrl === 'pro' && isInitialized && !paddleLoading) {
+      console.log('Conditions met, starting auto-redirect...');
+      
+      // Set auto-redirecting state
+      setIsAutoRedirecting(true);
+      
+      // Automatically open Paddle checkout
+      const openPaddleCheckout = async () => {
+        try {
+          console.log('Opening Paddle checkout...');
+          await openCheckout('pro', selectedPlan);
+        } catch (error) {
+          console.error('Failed to auto-open Paddle checkout:', error);
+          setIsAutoRedirecting(false);
+          // If auto-open fails, stay on the page for manual checkout
+        }
+      };
+      
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(openPaddleCheckout, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      console.log('Auto-redirect conditions not met:', {
+        planFromUrl: planFromUrl === 'pro',
+        isInitialized,
+        paddleLoading: !paddleLoading
+      });
     }
-  }, [planFromUrl]);
+  }, [planFromUrl, isInitialized, paddleLoading, selectedPlan, openCheckout]);
 
   const { plans: pricingPlans } = usePricing();
   
@@ -237,6 +271,51 @@ const Checkout = () => {
               </p>
             </div>
           </div>
+
+          {/* Auto-redirect Message */}
+          {isAutoRedirecting && (
+            <Card className="rounded-xl border-0 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div>
+                    <div className="font-medium text-blue-800 dark:text-blue-200">
+                      Redirecting to Secure Checkout...
+                    </div>
+                    <div className="text-sm text-blue-600 dark:text-blue-300">
+                      You'll be redirected to Paddle's secure payment page in a moment
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setIsAutoRedirecting(false)}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-600 dark:hover:bg-blue-950/50"
+                  >
+                    Continue Manually
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Debug Information */}
+          {planFromUrl === 'pro' && (
+            <Card className="rounded-xl border-0 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800">
+              <CardContent className="pt-6">
+                <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <div><strong>Debug Info:</strong></div>
+                  <div>Plan from URL: {planFromUrl}</div>
+                  <div>Paddle Initialized: {isInitialized ? 'Yes' : 'No'}</div>
+                  <div>Paddle Loading: {paddleLoading ? 'Yes' : 'No'}</div>
+                  <div>Auto Redirecting: {isAutoRedirecting ? 'Yes' : 'No'}</div>
+                  <div>Selected Plan: {selectedPlan}</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Plan Selection & Payment Form */}

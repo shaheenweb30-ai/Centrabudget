@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
 
     <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://vitals.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.paddle.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://vitals.vercel-insights.com https://cdn.paddle.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.paddle.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: https://cdn.paddle.com; frame-src https://*.paddle.com https://*.paddle.dev; object-src 'none'; base-uri 'self';">
 
     <!-- Primary Meta Tags -->
     <title>CentraBudget – Simple & Smart Budget Tracking</title>
@@ -42,6 +42,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Paddle CSS -->
+    <link rel="stylesheet" href="https://cdn.paddle.com/paddle/v2/assets/css/paddle.css">
   </head>
 
   <body>

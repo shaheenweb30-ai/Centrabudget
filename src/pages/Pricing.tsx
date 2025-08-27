@@ -161,19 +161,8 @@ const Pricing: React.FC = () => {
     } else if (planName === 'Pro') {
       if (user) {
         if (isFreePlan) {
-          // Logged in user upgrading from free to pro - use Paddle checkout
-          if (isInitialized) {
-            try {
-              await openCheckout('pro', billingCycle);
-            } catch (error) {
-              console.error('Failed to open checkout:', error);
-              // Fallback to checkout page if Paddle fails
-              navigate('/checkout');
-            }
-          } else {
-            // Paddle not ready, fallback to checkout page
-            navigate('/checkout');
-          }
+          // Logged in user upgrading from free to pro - redirect to checkout with plan parameter
+          navigate(`/checkout?plan=pro`);
         } else {
           // Already on pro plan - redirect to dashboard
           navigate('/dashboard');

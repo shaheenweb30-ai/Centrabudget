@@ -7,6 +7,7 @@ import { useUserPlan } from '@/hooks/useUserPlan';
 import { usePricing } from '@/contexts/PricingContext';
 import { usePaddle } from '@/contexts/PaddleContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useNavigate } from 'react-router-dom';
 
 interface PricingCardsProps {
   showComparison?: boolean;
@@ -26,6 +27,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   const { plans: pricingPlans } = usePricing();
   const { openCheckout, isInitialized } = usePaddle();
   const { formatCurrency } = useSettings();
+  const navigate = useNavigate();
   
   // Force USD formatting for pricing cards
   const formatUSD = (amount: number): string => {
@@ -92,9 +94,10 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   const handleUpgrade = async (planName: string) => {
     if (planName === 'Pro') {
       try {
-        await openCheckout('pro', billingCycle);
+        // Navigate to checkout page with plan parameter for auto-redirect
+        navigate(`/checkout?plan=pro`);
       } catch (error) {
-        console.error('Failed to open checkout:', error);
+        console.error('Failed to navigate to checkout:', error);
       }
     }
   };

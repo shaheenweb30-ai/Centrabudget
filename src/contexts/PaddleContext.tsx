@@ -32,10 +32,18 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('🔄 PaddleProvider mounted');
+  console.log('🔧 Testing Paddle config import:', {
+    PADDLE_CONFIG: !!PADDLE_CONFIG,
+    validatePaddleConfig: typeof validatePaddleConfig,
+    configValues: PADDLE_CONFIG
+  });
+
   // Initialize Paddle
   useEffect(() => {
     const initPaddle = async () => {
       try {
+        console.log('🚀 Starting Paddle initialization...');
         setIsLoading(true);
         setError(null);
 
@@ -43,16 +51,24 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         if (typeof window === 'undefined') {
           throw new Error('Paddle can only be initialized in a browser environment');
         }
+        console.log('✅ Browser environment check passed');
 
         // Check if Paddle SDK is available
         if (typeof initializePaddle !== 'function' || typeof getPaddleInstance !== 'function') {
+          console.error('❌ Paddle SDK functions not available:', {
+            initializePaddle: typeof initializePaddle,
+            getPaddleInstance: typeof getPaddleInstance
+          });
           throw new Error('Paddle SDK is not properly loaded');
         }
+        console.log('✅ Paddle SDK functions available');
 
         // Validate configuration
+        console.log('🔍 Validating Paddle configuration...');
         if (!validatePaddleConfig()) {
           throw new Error('Paddle configuration is incomplete. Please check your environment variables.');
         }
+        console.log('✅ Paddle configuration validated');
 
         // Initialize Paddle using the new API
         const clientId = PADDLE_CONFIG.clientId;
@@ -60,17 +76,19 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error('Paddle Client ID is required');
         }
         
-        console.log('Initializing Paddle with client ID:', '***' + clientId.slice(-4));
-        console.log('Paddle functions available:', { initializePaddle: typeof initializePaddle, getPaddleInstance: typeof getPaddleInstance });
+        console.log('🔑 Initializing Paddle with client ID:', '***' + clientId.slice(-4));
+        console.log('🌍 Paddle environment:', PADDLE_CONFIG.environment);
+        console.log('📦 Paddle products:', PADDLE_CONFIG.products);
         
         await initializePaddle({
           environment: PADDLE_CONFIG.environment as 'sandbox' | 'production',
           clientId: clientId,
         });
+        console.log('✅ Paddle.initialize() completed');
 
         // Get the Paddle instance
         const paddleInstance = getPaddleInstance();
-        console.log('Paddle instance retrieved:', paddleInstance);
+        console.log('🔍 Paddle instance retrieved:', paddleInstance);
         
         if (!paddleInstance) {
           throw new Error('Failed to get Paddle instance');
@@ -78,23 +96,24 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         
         // Verify the instance has the required methods
         if (!paddleInstance.Checkout || typeof paddleInstance.Checkout.open !== 'function') {
-          console.error('Paddle instance structure:', paddleInstance);
+          console.error('❌ Paddle instance structure:', paddleInstance);
           throw new Error('Paddle instance is missing required Checkout methods');
         }
 
         setPaddle(paddleInstance);
         setIsInitialized(true);
         
-        console.log('Paddle initialized successfully', paddleInstance);
-        console.log('Paddle.Checkout methods:', Object.keys(paddleInstance.Checkout || {}));
+        console.log('🎉 Paddle initialized successfully!', paddleInstance);
+        console.log('🛒 Paddle.Checkout methods:', Object.keys(paddleInstance.Checkout || {}));
       } catch (err) {
-        console.error('Failed to initialize Paddle:', err);
+        console.error('💥 Failed to initialize Paddle:', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize Paddle');
       } finally {
         setIsLoading(false);
       }
     };
 
+    console.log('🔄 PaddleContext useEffect triggered');
     initPaddle();
   }, []);
 

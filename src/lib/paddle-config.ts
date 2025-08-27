@@ -1,4 +1,8 @@
 // Paddle configuration for CentraBudget
+console.log('🚀 paddle-config.ts file is executing!');
+console.log('🔍 Testing basic functionality...');
+console.log('🔍 Current time:', new Date().toISOString());
+
 export const PADDLE_CONFIG = {
   // Environment: 'sandbox' for testing, 'production' for live
   environment: import.meta.env.VITE_PADDLE_ENVIRONMENT || 'production',
@@ -18,11 +22,12 @@ export const PADDLE_CONFIG = {
   webhookEndpoint: import.meta.env.VITE_PADDLE_WEBHOOK_ENDPOINT || '',
   
   // Success and cancel URLs
-  successUrl: `${window.location.origin}/subscription?success=true`,
-  cancelUrl: `${window.location.origin}/pricing?canceled=true`
+  successUrl: '',
+  cancelUrl: ''
 };
 
 // Debug logging for configuration
+console.log('🔧 Paddle Config Loading...');
 console.log('Paddle Config:', {
   environment: PADDLE_CONFIG.environment,
   clientId: PADDLE_CONFIG.clientId ? '***' + PADDLE_CONFIG.clientId.slice(-4) : 'NOT_SET',
@@ -30,12 +35,26 @@ console.log('Paddle Config:', {
   webhookEndpoint: PADDLE_CONFIG.webhookEndpoint || 'NOT_SET'
 });
 
+// Check if environment variables are loaded
+console.log('🔍 Environment Variables Check:', {
+  VITE_PADDLE_ENVIRONMENT: import.meta.env.VITE_PADDLE_ENVIRONMENT,
+  VITE_PADDLE_CLIENT_ID: import.meta.env.VITE_PADDLE_CLIENT_ID ? 'SET' : 'NOT_SET',
+  VITE_PADDLE_PRO_MONTHLY_ID: import.meta.env.VITE_PADDLE_PRO_MONTHLY_ID ? 'SET' : 'NOT_SET',
+  VITE_PADDLE_PRO_YEARLY_ID: import.meta.env.VITE_PADDLE_PRO_YEARLY_ID ? 'SET' : 'NOT_SET'
+});
+
+// Function to get dynamic URLs
+export const getPaddleUrls = () => ({
+  successUrl: `${window.location.origin}/subscription?success=true`,
+  cancelUrl: `${window.location.origin}/pricing?canceled=true`
+});
+
 // Paddle checkout options
 export const PADDLE_CHECKOUT_OPTIONS = {
   theme: 'light',
   locale: 'en',
-  successUrl: PADDLE_CONFIG.successUrl,
-  cancelUrl: PADDLE_CONFIG.cancelUrl,
+  successUrl: getPaddleUrls().successUrl,
+  cancelUrl: getPaddleUrls().cancelUrl,
   customData: {
     // Add any custom data you want to pass to Paddle
     source: 'centrabudget-web'
@@ -60,3 +79,5 @@ export const validatePaddleConfig = () => {
   
   return true;
 };
+
+console.log('✅ paddle-config.ts file finished loading!');
