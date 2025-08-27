@@ -62,6 +62,13 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error('Paddle SDK is not properly loaded');
         }
         console.log('✅ Paddle SDK functions available');
+        
+        // Wait for Paddle to be ready
+        if (typeof window !== 'undefined' && (window as any).Paddle) {
+          console.log('🌍 Global Paddle object found, waiting for it to be ready...');
+          // Give Paddle a moment to fully initialize
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
         // Validate configuration
         console.log('🔍 Validating Paddle configuration...');
@@ -70,7 +77,7 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
         console.log('✅ Paddle configuration validated');
 
-        // Initialize Paddle using the new API
+        // Initialize Paddle using the v1 API
         const clientId = PADDLE_CONFIG.clientId;
         if (!clientId) {
           throw new Error('Paddle Client ID is required');
@@ -80,6 +87,17 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         console.log('🌍 Paddle environment:', PADDLE_CONFIG.environment);
         console.log('📦 Paddle products:', PADDLE_CONFIG.products);
         
+        // First, set the Paddle environment globally
+        if (typeof window !== 'undefined' && (window as any).Paddle) {
+          try {
+            (window as any).Paddle.Environment.set(PADDLE_CONFIG.environment as 'sandbox' | 'production');
+            console.log('🌍 Paddle environment set globally');
+          } catch (envError) {
+            console.warn('⚠️ Could not set global Paddle environment:', envError);
+          }
+        }
+        
+        // Initialize Paddle
         await initializePaddle({
           environment: PADDLE_CONFIG.environment as 'sandbox' | 'production',
           clientId: clientId,
@@ -171,8 +189,13 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           source: 'centrabudget-web'
         }
       };
-
-      // Open Paddle checkout using the correct API with settings
+      
+      // Add client token to checkout data
+      if (PADDLE_CONFIG.clientId) {
+        checkoutData.clientToken = PADDLE_CONFIG.clientId;
+      }
+      
+      // Open Paddle checkout using the v1 API
       console.log('Opening Paddle checkout with data:', checkoutData);
       console.log('Paddle instance available:', !!paddle);
       console.log('Paddle.Checkout available:', !!paddle?.Checkout);
@@ -182,24 +205,22 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         throw new Error('Paddle checkout is not available');
       }
       
-      // Prepare checkout settings with success/cancel URLs
-      const checkoutSettings = {
-        displayMode: 'overlay',
-        successUrl: window.location.origin + '/subscription?success=true',
-        cancelUrl: window.location.origin + '/pricing?canceled=true'
-      };
-      
-      console.log('Checkout settings:', checkoutSettings);
-      
       try {
+        // Use v1 API checkout method with settings
+        const checkoutSettings = {
+          displayMode: 'overlay',
+          successUrl: window.location.origin + '/subscription?success=true',
+          cancelUrl: window.location.origin + '/pricing?canceled=true',
+          // Add client token to settings as well
+          clientToken: PADDLE_CONFIG.clientId
+        };
+        
         paddle.Checkout.open(checkoutData, checkoutSettings);
         console.log('Paddle checkout opened successfully with settings');
       } catch (checkoutError) {
         console.error('Failed to open Paddle checkout:', checkoutError);
         throw new Error('Failed to open checkout: ' + (checkoutError instanceof Error ? checkoutError.message : 'Unknown error'));
       }
-      
-      // Note: Paddle.Checkout.open() is synchronous, so we don't await it
       
     } catch (err) {
       console.error('Failed to open checkout:', err);
