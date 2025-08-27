@@ -22,8 +22,8 @@ export const PADDLE_CONFIG = {
   webhookEndpoint: import.meta.env.VITE_PADDLE_WEBHOOK_ENDPOINT || '',
   
   // Success and cancel URLs
-  successUrl: '',
-  cancelUrl: ''
+  successUrl: typeof window !== 'undefined' ? `${window.location.origin}/subscription?success=true` : '',
+  cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/subscription?canceled=true` : ''
 };
 
 // Debug logging for configuration

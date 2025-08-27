@@ -1,11 +1,24 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getPaddleInstance, initializePaddle, type Paddle } from '@paddle/paddle-js';
 import { PADDLE_CONFIG, validatePaddleConfig } from '@/lib/paddle-config';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+// Declare Paddle types globally since we're loading from CDN
+declare global {
+  interface Window {
+    Paddle: {
+      Environment: {
+        set: (environment: 'sandbox' | 'production') => void;
+      };
+      Initialize: (config: { token: string }) => void;
+      Checkout: {
+        open: (checkoutData: any) => void;
+      };
+    };
+  }
+}
+
 interface PaddleContextType {
-  paddle: Paddle | null;
   isInitialized: boolean;
   isLoading: boolean;
   error: string | null;
@@ -27,7 +40,6 @@ export const usePaddle = () => {
 export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [paddle, setPaddle] = useState<Paddle | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,14 +65,19 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
         console.log('✅ Browser environment check passed');
 
-        // Check if Paddle SDK is available
-        if (typeof initializePaddle !== 'function') {
-          console.error('❌ Paddle SDK functions not available:', {
-            initializePaddle: typeof initializePaddle
-          });
-          throw new Error('Paddle SDK is not properly loaded');
+        // Wait for Paddle.js to load from CDN
+        let attempts = 0;
+        const maxAttempts = 50; // Wait up to 5 seconds
+        
+        while (!window.Paddle && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
         }
-        console.log('✅ Paddle SDK functions available');
+
+        if (!window.Paddle) {
+          throw new Error('Paddle.js failed to load from CDN');
+        }
+        console.log('✅ Paddle.js loaded from CDN');
 
         // Validate configuration
         console.log('🔍 Validating Paddle configuration...');
@@ -69,38 +86,39 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
         console.log('✅ Paddle configuration validated');
 
-        // Initialize Paddle using the v2 API with token instead of clientId
-        const token = PADDLE_CONFIG.clientId; // Your client ID is the token
+        // Set environment first
+        const environment = PADDLE_CONFIG.environment as 'sandbox' | 'production';
+        window.Paddle.Environment.set(environment);
+        console.log('🌍 Paddle environment set to:', environment);
+
+        // Initialize Paddle with token
+        const token = PADDLE_CONFIG.clientId;
         if (!token) {
           throw new Error('Paddle token is required');
         }
         
         console.log('🔑 Initializing Paddle with token:', '***' + token.slice(-4));
-        console.log(' Paddle environment:', PADDLE_CONFIG.environment);
         
-        // Initialize Paddle with v2 API
-        const paddleInstance = await initializePaddle({
-          environment: PADDLE_CONFIG.environment as 'sandbox' | 'production',
-          token: token, // Use token instead of clientId
+        // Initialize Paddle using the official v2 API
+        window.Paddle.Initialize({ 
+          token: token 
         });
         
-        if (!paddleInstance) {
-          throw new Error('Failed to initialize Paddle');
-        }
+        console.log('✅ Paddle.Initialize() completed');
         
-        console.log('✅ Paddle initialized successfully:', paddleInstance);
+        // Small delay to ensure initialization is complete
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Verify the instance has the required methods
-        if (!paddleInstance.Checkout || typeof paddleInstance.Checkout.open !== 'function') {
-          console.error('❌ Paddle instance structure:', paddleInstance);
-          throw new Error('Paddle instance is missing required Checkout methods');
+        // Verify the Checkout methods are available
+        if (!window.Paddle.Checkout || typeof window.Paddle.Checkout.open !== 'function') {
+          console.error('❌ Paddle.Checkout methods not available:', window.Paddle);
+          throw new Error('Paddle Checkout is not properly initialized');
         }
 
-        setPaddle(paddleInstance);
         setIsInitialized(true);
+        console.log('🎉 Paddle initialized successfully!');
+        console.log('🛒 Paddle.Checkout methods available');
         
-        console.log(' Paddle initialized successfully!', paddleInstance);
-        console.log('🛒 Paddle.Checkout methods:', Object.keys(paddleInstance.Checkout || {}));
       } catch (err) {
         console.error('💥 Failed to initialize Paddle:', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize Paddle');
@@ -115,7 +133,7 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Open checkout for a specific plan
   const openCheckout = async (planId: string, billingCycle: 'monthly' | 'yearly') => {
-    if (!paddle || !isInitialized) {
+    if (!isInitialized) {
       toast({
         title: "Error",
         description: "Payment system is not ready. Please try again.",
@@ -149,7 +167,7 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         throw new Error(`Product ID not found for ${planId} ${billingCycle}. Please check your Paddle product configuration.`);
       }
 
-      // Prepare checkout data for v2 API
+      // Prepare checkout data following Paddle.js v2 documentation
       const checkoutData = {
         items: [
           {
@@ -165,21 +183,22 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           planId,
           billingCycle,
           source: 'centrabudget-web'
-        }
+        },
+        successUrl: `${window.location.origin}/subscription?success=true`,
+        cancelUrl: `${window.location.origin}/subscription?canceled=true`
       };
       
       console.log('Opening Paddle checkout with data:', checkoutData);
-      console.log('Paddle instance available:', !!paddle);
-      console.log('Paddle.Checkout available:', !!paddle?.Checkout);
-      console.log('Paddle.Checkout.open available:', typeof paddle?.Checkout?.open);
+      console.log('Paddle.Checkout available:', !!window.Paddle?.Checkout);
+      console.log('Paddle.Checkout.open available:', typeof window.Paddle?.Checkout?.open);
       
-      if (!paddle?.Checkout?.open) {
+      if (!window.Paddle?.Checkout?.open) {
         throw new Error('Paddle checkout is not available');
       }
       
       try {
-        // Use v2 API checkout method - no need for additional settings
-        paddle.Checkout.open(checkoutData);
+        // Use the official Paddle.Checkout.open() method
+        window.Paddle.Checkout.open(checkoutData);
         console.log('Paddle checkout opened successfully');
       } catch (checkoutError) {
         console.error('Failed to open Paddle checkout:', checkoutError);
@@ -219,7 +238,6 @@ export const PaddleProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const value: PaddleContextType = {
-    paddle,
     isInitialized,
     isLoading,
     error,
