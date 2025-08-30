@@ -267,3 +267,4 @@ By following this guide, you'll have:
 - ✅ **Automatic Pro account activation**
 
 Your payment system will be fully functional! 🚀
+

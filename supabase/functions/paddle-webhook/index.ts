@@ -27,10 +27,25 @@ serve(async (req) => {
       )
     }
 
-    // Get environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const paddleWebhookSecret = Deno.env.get('PADDLE_WEBHOOK_SECRET')!
+    // Get environment variables (support fallbacks for hosted secrets)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('PROJECT_URL') || ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SERVICE_ROLE_KEY') || ''
+    const paddleWebhookSecret = Deno.env.get('PADDLE_WEBHOOK_SECRET') || ''
+
+    if (!supabaseUrl || !supabaseServiceKey || !paddleWebhookSecret) {
+      console.error('❌ Missing required environment variables', {
+        hasSupabaseUrl: !!supabaseUrl,
+        hasServiceRoleKey: !!supabaseServiceKey,
+        hasWebhookSecret: !!paddleWebhookSecret
+      })
+      return new Response(
+        JSON.stringify({ error: 'Server misconfigured' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -42,12 +57,25 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     })
 
-    // Get request body
-    const body = await req.json()
+    // Read raw request body for signature verification, then parse JSON
+    const payload = await req.text()
+    let body: any
+    try {
+      body = JSON.parse(payload)
+    } catch (_e) {
+      console.error('❌ Invalid JSON payload')
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
     console.log('📡 Webhook body:', JSON.stringify(body, null, 2))
 
     // Verify webhook signature
-    const signature = req.headers.get('paddle-signature')
+    const signature = req.headers.get('paddle-signature') || req.headers.get('Paddle-Signature')
     if (!signature || !paddleWebhookSecret) {
       console.error('❌ Missing webhook signature or secret')
       console.error('Signature:', signature ? 'Present' : 'Missing')
@@ -61,8 +89,7 @@ serve(async (req) => {
       )
     }
 
-    // Verify webhook signature
-    const payload = JSON.stringify(body)
+    // Verify webhook signature against raw payload
     const expectedSignature = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(paddleWebhookSecret),
@@ -200,11 +227,9 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
       return
     }
 
-    // Determine plan and billing cycle from items
-    const item = items[0]
-    // Extract plan and billing cycle from custom_data if available, otherwise infer from price_id
-    const planId = customData.planId || (item.price_id.includes('monthly') ? 'pro' : 'pro')
-    const billingCycle = customData.billingCycle || (item.price_id.includes('monthly') ? 'monthly' : 'yearly')
+    // Determine plan and billing cycle primarily from custom_data with safe fallbacks
+    const planId = customData.planId || 'pro'
+    const billingCycle = customData.billingCycle === 'yearly' ? 'yearly' : 'monthly'
 
     console.log('🔍 Activating subscription:', {
       userId,
