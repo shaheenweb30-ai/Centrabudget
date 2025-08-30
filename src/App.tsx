@@ -48,6 +48,7 @@ import CategoriesBudget from "./pages/CategoriesBudget";
 import AIFinancialCoach from "./pages/AIFinancialCoach";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import CheckoutPro from "./pages/CheckoutPro";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 
 import Reports from "./pages/Reports";
@@ -167,6 +168,7 @@ const AppContent = () => {
                   <Route path="/" element={<Homepage1 />} />
                   <Route path="/features" element={<Features />} />
                   <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/payment-success" element={<PaymentSuccess />} />
                   
                   
 
