@@ -75,10 +75,10 @@ serve(async (req) => {
     console.log('📡 Webhook body:', JSON.stringify(body, null, 2))
 
     // Verify webhook signature
-    const signature = req.headers.get('paddle-signature') || req.headers.get('Paddle-Signature')
-    if (!signature || !paddleWebhookSecret) {
+    const signatureHeader = req.headers.get('paddle-signature') || req.headers.get('Paddle-Signature') || ''
+    if (!signatureHeader || !paddleWebhookSecret) {
       console.error('❌ Missing webhook signature or secret')
-      console.error('Signature:', signature ? 'Present' : 'Missing')
+      console.error('Signature:', signatureHeader ? 'Present' : 'Missing')
       console.error('Secret:', paddleWebhookSecret ? 'Set' : 'Missing')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
@@ -89,23 +89,52 @@ serve(async (req) => {
       )
     }
 
-    // Verify webhook signature against raw payload
+    // Parse Paddle v2 signature header: "ts=...;h1=..." and verify HMAC over `${ts}:${payload}`
+    const signatureParts = Object.fromEntries(signatureHeader.split(';').map((kv) => {
+      const [k, v] = kv.trim().split('=')
+      return [k, v]
+    })) as Record<string, string>
+
+    const ts = signatureParts['ts']
+    const receivedH1 = signatureParts['h1']
+
+    if (!ts || !receivedH1) {
+      console.error('❌ Invalid signature header format:', signatureHeader)
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Optional: reject old signatures (5 minutes skew)
+    const nowSec = Math.floor(Date.now() / 1000)
+    const tsNum = Number(ts)
+    if (!Number.isFinite(tsNum) || Math.abs(nowSec - tsNum) > 5 * 60) {
+      console.warn('⚠️ Signature timestamp outside allowed window', { ts, nowSec })
+      // continue for now, or return 401 to enforce strictness
+    }
+
+    const signedData = `${ts}:${payload}`
+
     const expectedSignature = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(paddleWebhookSecret),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']
-    ).then(key => crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload)))
+    ).then(key => crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedData)))
     .then(signature => Array.from(new Uint8Array(signature))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
     )
 
-    if (signature !== expectedSignature) {
+    if (receivedH1 !== expectedSignature) {
       console.error('❌ Invalid webhook signature')
       console.error('Expected:', expectedSignature)
-      console.error('Received:', signature)
+      console.error('Received:', receivedH1)
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
         { 
