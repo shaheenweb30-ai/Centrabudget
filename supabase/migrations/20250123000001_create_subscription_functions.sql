@@ -84,13 +84,13 @@ BEGIN
   END;
   
   -- Update user role to subscriber (Pro user)
-  -- First remove any existing roles
-  DELETE FROM user_roles
-  WHERE user_id = p_user_id AND role = 'user';
+  -- First remove the 'user' role if present
+  DELETE FROM public.user_roles
+  WHERE user_id = p_user_id AND role = 'user'::public.app_role;
   
   -- Add subscriber role if not already exists
-  INSERT INTO user_roles (user_id, role)
-  VALUES (p_user_id, 'subscriber')
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (p_user_id, 'subscriber'::public.app_role)
   ON CONFLICT (user_id, role) DO NOTHING;
   
   -- Log the action
@@ -146,11 +146,11 @@ BEGIN
     WHERE user_id = p_user_id;
     
     -- Downgrade user to free plan
-    DELETE FROM user_roles
-    WHERE user_id = p_user_id AND role = 'subscriber';
+    DELETE FROM public.user_roles
+    WHERE user_id = p_user_id AND role = 'subscriber'::public.app_role;
     
-    INSERT INTO user_roles (user_id, role)
-    VALUES (p_user_id, 'user')
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (p_user_id, 'user'::public.app_role)
     ON CONFLICT (user_id, role) DO NOTHING;
     
     v_result_message := 'Subscription cancelled immediately for user ' || v_user_email || ' - downgraded to free plan';

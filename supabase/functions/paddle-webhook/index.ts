@@ -520,6 +520,23 @@ async function handlePaymentSucceeded(supabase: any, data: any) {
     } else {
       console.log('✅ Subscription billing period updated successfully:', subscription_id)
     }
+
+    // Ensure the user retains/gets subscriber role on successful payment
+    if (subscription && subscription.user_id) {
+      try {
+        console.log('🔄 Ensuring subscriber role for user:', subscription.user_id)
+        const { data: reactivateResult, error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
+          p_user_id: subscription.user_id
+        })
+        if (reactivateError) {
+          console.error('❌ Failed to ensure subscriber role on payment_succeeded:', reactivateError)
+        } else {
+          console.log('✅ Subscriber role ensured on payment_succeeded:', reactivateResult)
+        }
+      } catch (err) {
+        console.error('❌ Error calling reactivate_user_subscription:', err)
+      }
+    }
   } catch (error) {
     console.error('❌ Error handling payment succeeded:', error)
   }
@@ -589,6 +606,52 @@ async function handleTransactionCompleted(supabase: any, data: any) {
     // via subscription.created, but let's log it for debugging
     if (subscription_id) {
       console.log('✅ Transaction completed for existing subscription:', subscription_id)
+      // Try to ensure the user is marked as subscriber when a transaction completes
+      // Look up the user by paddle_subscription_id first
+      const { data: subscriptionRow, error: lookupError } = await supabase
+        .from('user_subscriptions')
+        .select('user_id')
+        .eq('paddle_subscription_id', subscription_id)
+        .single()
+
+      if (!lookupError && subscriptionRow?.user_id) {
+        const userId = subscriptionRow.user_id
+        try {
+          const { data: reactivateResult, error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
+            p_user_id: userId
+          })
+          if (reactivateError) {
+            console.error('❌ Failed to ensure subscriber role on transaction.completed:', reactivateError)
+          } else {
+            console.log('✅ Subscriber role ensured on transaction.completed:', reactivateResult)
+          }
+        } catch (err) {
+          console.error('❌ Error calling reactivate_user_subscription (transaction.completed):', err)
+        }
+      } else {
+        console.warn('⚠️ Could not find user by paddle_subscription_id; attempting customer_id fallback', lookupError)
+        if (customer_id) {
+          const { data: byCustomer, error: custError } = await supabase
+            .from('user_subscriptions')
+            .select('user_id')
+            .eq('paddle_customer_id', customer_id)
+            .single()
+          if (!custError && byCustomer?.user_id) {
+            try {
+              const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
+                p_user_id: byCustomer.user_id
+              })
+              if (reactivateError) {
+                console.error('❌ Failed to ensure subscriber role via customer_id on transaction.completed:', reactivateError)
+              } else {
+                console.log('✅ Subscriber role ensured via customer_id on transaction.completed')
+              }
+            } catch (err) {
+              console.error('❌ Error calling reactivate_user_subscription via customer_id (transaction.completed):', err)
+            }
+          }
+        }
+      }
       return
     }
     
