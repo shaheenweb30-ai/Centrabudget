@@ -240,7 +240,7 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
     
     // Extract user ID from custom data
     const customData = data.custom_data || {}
-    const userId = customData.userId
+    let userId = customData.userId
     
     console.log('🔍 Extracted custom data:', {
       customData,
@@ -250,10 +250,39 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
     })
     
     if (!userId) {
-      console.error('❌ No userId in custom data for subscription:', subscription_id)
-      console.error('❌ Full custom_data:', customData)
-      console.error('❌ Custom data keys:', Object.keys(customData))
-      return
+      console.warn('⚠️ No userId in custom data for subscription:', subscription_id)
+      console.warn('⚠️ Full custom_data:', customData)
+      console.warn('⚠️ Custom data keys:', Object.keys(customData))
+
+      // Fallback: try to resolve user by email from event payload (if available)
+      const possibleEmails = [
+        data?.customer?.email,
+        data?.customer_email,
+        data?.email,
+        data?.billing_details?.email,
+        data?.customer?.email_address
+      ].filter(Boolean)
+
+      if (possibleEmails.length > 0) {
+        const email = possibleEmails[0]
+        console.log('🔍 Attempting to resolve user by email from webhook payload:', email)
+        const { data: userRow, error: userLookupError } = await supabase
+          .from('users')
+          .select('id, email')
+          .eq('email', email)
+          .single()
+
+        if (!userLookupError && userRow?.id) {
+          console.log('✅ Resolved user by email for subscription:', { email, userId: userRow.id })
+          userId = userRow.id
+        } else {
+          console.error('❌ Failed to resolve user by email for subscription:', { email, userLookupError })
+          return
+        }
+      } else {
+        console.error('❌ No userId and no resolvable email in webhook payload for subscription:', subscription_id)
+        return
+      }
     }
 
     // Determine plan and billing cycle primarily from custom_data with safe fallbacks
@@ -299,11 +328,13 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
     })
     
     // Find subscription and ensure it's active
-    const { data: subscription, error } = await supabase
+    const { data: subscriptionRow, error } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('paddle_subscription_id', subscription_id)
       .single()
+
+    let subscription = subscriptionRow
 
     if (error || !subscription) {
       console.error('❌ Subscription not found for activation:', subscription_id)
@@ -491,7 +522,23 @@ async function handlePaymentSucceeded(supabase: any, data: any) {
 
     if (error || !subscription) {
       console.error('❌ Subscription not found for payment:', subscription_id)
-      return
+      // Fallback: try to resolve by customer_id if present
+      const fallbackCustomerId = (data && (data.customer_id || data.customer?.id)) || null
+      if (fallbackCustomerId) {
+        const { data: subByCustomer, error: subByCustErr } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('paddle_customer_id', fallbackCustomerId)
+          .single()
+        if (subByCustErr || !subByCustomer) {
+          console.warn('⚠️ No subscription mapping by customer_id either; skipping role ensure', subByCustErr)
+          return
+        }
+        // Use this subscription row for subsequent updates
+        subscription = subByCustomer
+      } else {
+        return
+      }
     }
 
     // Calculate new billing period
@@ -649,6 +696,57 @@ async function handleTransactionCompleted(supabase: any, data: any) {
             } catch (err) {
               console.error('❌ Error calling reactivate_user_subscription via customer_id (transaction.completed):', err)
             }
+            return
+          }
+        }
+        // Fallback: try using custom_data.userId directly if present
+        if (custom_data?.userId) {
+          try {
+            console.log('🔄 Ensuring subscriber via custom_data.userId fallback:', custom_data.userId)
+            const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
+              p_user_id: custom_data.userId
+            })
+            if (reactivateError) {
+              console.error('❌ Failed to ensure subscriber role via custom_data.userId fallback:', reactivateError)
+            } else {
+              console.log('✅ Subscriber role ensured via custom_data.userId fallback on transaction.completed')
+            }
+            return
+          } catch (err) {
+            console.error('❌ Error calling reactivate_user_subscription via custom_data.userId fallback:', err)
+          }
+        }
+        // Final fallback: try to resolve by email if available in payload
+        const possibleEmails = [
+          data?.customer?.email,
+          data?.customer_email,
+          data?.email,
+          data?.billing_details?.email,
+          data?.customer?.email_address
+        ].filter(Boolean)
+        if (possibleEmails.length > 0) {
+          const email = possibleEmails[0]
+          console.log('🔍 Attempting to resolve user by email from transaction payload:', email)
+          const { data: userRow, error: userLookupError } = await supabase
+            .from('users')
+            .select('id, email')
+            .eq('email', email)
+            .single()
+          if (!userLookupError && userRow?.id) {
+            try {
+              const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
+                p_user_id: userRow.id
+              })
+              if (reactivateError) {
+                console.error('❌ Failed to ensure subscriber role via email fallback on transaction.completed:', reactivateError)
+              } else {
+                console.log('✅ Subscriber role ensured via email fallback on transaction.completed')
+              }
+            } catch (err) {
+              console.error('❌ Error calling reactivate_user_subscription via email fallback:', err)
+            }
+          } else {
+            console.warn('⚠️ Could not resolve user by email from transaction payload', userLookupError)
           }
         }
       }

@@ -92,7 +92,7 @@ export const SignInPage = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // Remove redirectTo - let the app handle the callback
+          redirectTo: getAuthRedirectUrl('/dashboard'),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

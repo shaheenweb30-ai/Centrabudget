@@ -304,6 +304,18 @@ export default function Homepage1() {
                   </div>
                 </div>
               </div>
+
+              {/* Product Hunt Badge */}
+              <div className="pt-2">
+                <a href="https://www.producthunt.com/products/centrabudget?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-centrabudget" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1005078&theme=neutral&t=1756678497190"
+                    alt="CentraBudget - Simple & smart budget tracking with advanced reports | Product Hunt"
+                    width={250}
+                    height={54}
+                  />
+                </a>
+              </div>
             </div>
 
             {/* Right Side - App Interface Mockup */}
