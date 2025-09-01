@@ -166,6 +166,47 @@ serve(async (req) => {
 
     console.log('✅ Webhook signature verified successfully')
 
+    // Optional Paddle API key for fallbacks
+    const paddleApiKey = Deno.env.get('PADDLE_API_KEY') || ''
+
+    // Helper: call Paddle API (if key provided)
+    async function fetchFromPaddle(path: string): Promise<any | null> {
+      try {
+        if (!paddleApiKey) return null
+        const resp = await fetch(`https://api.paddle.com${path}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${paddleApiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        })
+        if (!resp.ok) {
+          console.warn('⚠️ Paddle API request failed', { path, status: resp.status })
+          return null
+        }
+        return await resp.json()
+      } catch (e) {
+        console.error('⚠️ Error calling Paddle API', e)
+        return null
+      }
+    }
+
+    async function resolveEmailFromSubscriptionId(sid: string): Promise<string | null> {
+      const sub = await fetchFromPaddle(`/subscriptions/${sid}`)
+      const customerId = sub?.data?.customer_id || sub?.data?.customer?.id
+      if (!customerId) return null
+      const cust = await fetchFromPaddle(`/customers/${customerId}`)
+      const email = cust?.data?.email || cust?.data?.email_address || cust?.data?.primary_email
+      return email || null
+    }
+
+    async function resolveEmailFromCustomerId(cid: string): Promise<string | null> {
+      const cust = await fetchFromPaddle(`/customers/${cid}`)
+      const email = cust?.data?.email || cust?.data?.email_address || cust?.data?.primary_email
+      return email || null
+    }
+
     const event = body
     console.log('📡 Processing webhook event:', {
       event_type: event.event_type,
@@ -355,7 +396,7 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
       .eq('paddle_subscription_id', subscription_id)
       .single()
 
-    let subscription = subscriptionRow
+    let subscription = subscriptionRow as any
 
     if (error || !subscription) {
       console.error('❌ Subscription not found for activation:', subscription_id)
@@ -367,7 +408,7 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
           .eq('paddle_customer_id', customer_id)
           .single()
         if (!custErr && byCustomer) {
-          subscription = byCustomer
+          subscription = byCustomer as any
         } else {
           return
         }
