@@ -340,7 +340,8 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
 
 async function handleSubscriptionActivated(supabase: any, data: any) {
   try {
-    const { subscription_id, customer_id, items } = data
+    const { customer_id } = data
+    const subscription_id = data?.subscription_id || data?.id || data?.subscription?.id || data?.subscriptionId
     
     console.log('📡 Processing subscription.activated:', {
       subscription_id,
@@ -358,7 +359,21 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
 
     if (error || !subscription) {
       console.error('❌ Subscription not found for activation:', subscription_id)
-      return
+      // Fallback: try by customer_id if available
+      if (customer_id) {
+        const { data: byCustomer, error: custErr } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('paddle_customer_id', customer_id)
+          .single()
+        if (!custErr && byCustomer) {
+          subscription = byCustomer
+        } else {
+          return
+        }
+      } else {
+        return
+      }
     }
 
     // Update subscription status to active
@@ -374,6 +389,17 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
       console.error('❌ Failed to activate subscription:', updateError)
     } else {
       console.log('✅ Subscription activated successfully:', subscription_id)
+      // Ensure user role is subscriber
+      try {
+        const { error: roleErr } = await supabase.rpc('reactivate_user_subscription', {
+          p_user_id: subscription.user_id
+        })
+        if (roleErr) {
+          console.error('⚠️ Failed to ensure subscriber role on activation:', roleErr)
+        }
+      } catch (e) {
+        console.error('⚠️ Error ensuring subscriber role on activation:', e)
+      }
     }
   } catch (error) {
     console.error('❌ Error handling subscription activated:', error)
