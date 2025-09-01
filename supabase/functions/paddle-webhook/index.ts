@@ -286,6 +286,49 @@ serve(async (req) => {
   }
 })
 
+async function ensureSubscriberRoleDirect(supabase: any, userId: string) {
+  try {
+    console.log('🔧 Fallback: ensuring subscriber role directly for user:', userId)
+
+    const { error: delErr } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+      .eq('role', 'user')
+
+    if (delErr) {
+      console.warn('⚠️ Fallback: failed to delete basic user role (can ignore if not present):', delErr)
+    }
+
+    const { data: existing, error: selErr } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'subscriber')
+      .maybeSingle()
+
+    if (selErr) {
+      console.warn('⚠️ Fallback: error checking existing subscriber role:', selErr)
+    }
+
+    if (!existing) {
+      const { error: insErr } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'subscriber' })
+
+      if (insErr) {
+        console.error('❌ Fallback: failed to insert subscriber role:', insErr)
+      } else {
+        console.log('✅ Fallback: subscriber role ensured for user:', userId)
+      }
+    } else {
+      console.log('✅ Fallback: subscriber role already present for user:', userId)
+    }
+  } catch (e) {
+    console.error('❌ Fallback: unexpected error ensuring subscriber role:', e)
+  }
+}
+
 async function handleSubscriptionCreated(supabase: any, data: any) {
   try {
     const { subscription_id, customer_id, items, status, next_billed_at } = data
@@ -327,17 +370,17 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
       if (possibleEmails.length > 0) {
         const email = possibleEmails[0]
         console.log('🔍 Attempting to resolve user by email from webhook payload:', email)
-        const { data: userRow, error: userLookupError } = await supabase
+        const { data: userRow } = await supabase
           .from('users')
           .select('id, email')
           .eq('email', email)
-          .single()
+          .maybeSingle()
 
-        if (!userLookupError && userRow?.id) {
+        if (userRow?.id) {
           console.log('✅ Resolved user by email for subscription:', { email, userId: userRow.id })
           userId = userRow.id
         } else {
-          console.error('❌ Failed to resolve user by email for subscription:', { email, userLookupError })
+          console.error('❌ Failed to resolve user by email for subscription:', { email })
           return
         }
       } else {
@@ -390,24 +433,24 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
     })
     
     // Find subscription and ensure it's active
-    const { data: subscriptionRow, error } = await supabase
+    const { data: subscriptionRow } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('paddle_subscription_id', subscription_id)
-      .single()
+      .maybeSingle()
 
     let subscription = subscriptionRow as any
 
-    if (error || !subscription) {
+    if (!subscription) {
       console.error('❌ Subscription not found for activation:', subscription_id)
       // Fallback: try by customer_id if available
       if (customer_id) {
-        const { data: byCustomer, error: custErr } = await supabase
+        const { data: byCustomer } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('paddle_customer_id', customer_id)
-          .single()
-        if (!custErr && byCustomer) {
+          .maybeSingle()
+        if (byCustomer) {
           subscription = byCustomer as any
         } else {
           return
@@ -437,6 +480,7 @@ async function handleSubscriptionActivated(supabase: any, data: any) {
         })
         if (roleErr) {
           console.error('⚠️ Failed to ensure subscriber role on activation:', roleErr)
+          await ensureSubscriberRoleDirect(supabase, subscription.user_id)
         }
       } catch (e) {
         console.error('⚠️ Error ensuring subscriber role on activation:', e)
@@ -463,17 +507,21 @@ async function handleSubscriptionUpdated(supabase: any, data: any) {
       console.log('✅ Subscription reactivated:', subscription_id)
       
       // Ensure user has subscriber role
-      const { data: subscription, error } = await supabase
+      const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('user_id')
         .eq('paddle_subscription_id', subscription_id)
-        .single()
+        .maybeSingle()
 
-      if (!error && subscription) {
+      if (subscription) {
         // Update user role to subscriber
-        await supabase.rpc('reactivate_user_subscription', {
+        const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
           p_user_id: subscription.user_id
         })
+        if (reactivateError) {
+          console.error('⚠️ Failed to ensure subscriber role via RPC on subscription.updated, using fallback:', reactivateError)
+          await ensureSubscriberRoleDirect(supabase, subscription.user_id)
+        }
       }
     }
   } catch (error) {
@@ -491,13 +539,13 @@ async function handleSubscriptionCancelled(supabase: any, data: any) {
     })
     
     // Find user by subscription ID
-    const { data: subscription, error } = await supabase
+    const { data: subscription } = await supabase
       .from('user_subscriptions')
       .select('user_id')
       .eq('paddle_subscription_id', subscription_id)
-      .single()
+      .maybeSingle()
 
-    if (error || !subscription) {
+    if (!subscription) {
       console.error('❌ Subscription not found:', subscription_id)
       return
     }
@@ -601,24 +649,25 @@ async function handlePaymentSucceeded(supabase: any, data: any) {
     })
     
     // Find subscription and update billing period
-    const { data: subscription, error } = await supabase
+    const { data: subscriptionRow } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('paddle_subscription_id', subscription_id)
-      .single()
+      .maybeSingle()
+    let subscription = subscriptionRow as any
 
-    if (error || !subscription) {
+    if (!subscription) {
       console.error('❌ Subscription not found for payment:', subscription_id)
       // Fallback: try to resolve by customer_id if present
       const fallbackCustomerId = (data && (data.customer_id || data.customer?.id)) || null
       if (fallbackCustomerId) {
-        const { data: subByCustomer, error: subByCustErr } = await supabase
+        const { data: subByCustomer } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('paddle_customer_id', fallbackCustomerId)
-          .single()
-        if (subByCustErr || !subByCustomer) {
-          console.warn('⚠️ No subscription mapping by customer_id either; skipping role ensure', subByCustErr)
+          .maybeSingle()
+        if (!subByCustomer) {
+          console.warn('⚠️ No subscription mapping by customer_id either; skipping role ensure')
           return
         }
         // Use this subscription row for subsequent updates
@@ -664,6 +713,7 @@ async function handlePaymentSucceeded(supabase: any, data: any) {
         })
         if (reactivateError) {
           console.error('❌ Failed to ensure subscriber role on payment_succeeded:', reactivateError)
+          await ensureSubscriberRoleDirect(supabase, subscription.user_id)
         } else {
           console.log('✅ Subscriber role ensured on payment_succeeded:', reactivateResult)
         }
@@ -746,9 +796,9 @@ async function handleTransactionCompleted(supabase: any, data: any) {
         .from('user_subscriptions')
         .select('user_id')
         .eq('paddle_subscription_id', subscription_id)
-        .single()
+        .maybeSingle()
 
-      if (!lookupError && subscriptionRow?.user_id) {
+      if (subscriptionRow?.user_id) {
         const userId = subscriptionRow.user_id
         try {
           const { data: reactivateResult, error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
@@ -756,6 +806,7 @@ async function handleTransactionCompleted(supabase: any, data: any) {
           })
           if (reactivateError) {
             console.error('❌ Failed to ensure subscriber role on transaction.completed:', reactivateError)
+            await ensureSubscriberRoleDirect(supabase, userId)
           } else {
             console.log('✅ Subscriber role ensured on transaction.completed:', reactivateResult)
           }
@@ -763,20 +814,21 @@ async function handleTransactionCompleted(supabase: any, data: any) {
           console.error('❌ Error calling reactivate_user_subscription (transaction.completed):', err)
         }
       } else {
-        console.warn('⚠️ Could not find user by paddle_subscription_id; attempting customer_id fallback', lookupError)
+        console.warn('⚠️ Could not find user by paddle_subscription_id; attempting customer_id fallback')
         if (customer_id) {
           const { data: byCustomer, error: custError } = await supabase
             .from('user_subscriptions')
             .select('user_id')
             .eq('paddle_customer_id', customer_id)
-            .single()
-          if (!custError && byCustomer?.user_id) {
+            .maybeSingle()
+          if (byCustomer?.user_id) {
             try {
               const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
                 p_user_id: byCustomer.user_id
               })
               if (reactivateError) {
                 console.error('❌ Failed to ensure subscriber role via customer_id on transaction.completed:', reactivateError)
+                await ensureSubscriberRoleDirect(supabase, byCustomer.user_id)
               } else {
                 console.log('✅ Subscriber role ensured via customer_id on transaction.completed')
               }
@@ -795,6 +847,7 @@ async function handleTransactionCompleted(supabase: any, data: any) {
             })
             if (reactivateError) {
               console.error('❌ Failed to ensure subscriber role via custom_data.userId fallback:', reactivateError)
+              await ensureSubscriberRoleDirect(supabase, custom_data.userId)
             } else {
               console.log('✅ Subscriber role ensured via custom_data.userId fallback on transaction.completed')
             }
@@ -814,18 +867,19 @@ async function handleTransactionCompleted(supabase: any, data: any) {
         if (possibleEmails.length > 0) {
           const email = possibleEmails[0]
           console.log('🔍 Attempting to resolve user by email from transaction payload:', email)
-          const { data: userRow, error: userLookupError } = await supabase
-            .from('auth.users')
+          const { data: userRow } = await supabase
+            .from('users')
             .select('id, email')
             .eq('email', email)
-            .single()
-          if (!userLookupError && userRow?.id) {
+            .maybeSingle()
+          if (userRow?.id) {
             try {
               const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', {
                 p_user_id: userRow.id
               })
               if (reactivateError) {
                 console.error('❌ Failed to ensure subscriber role via email fallback on transaction.completed:', reactivateError)
+                await ensureSubscriberRoleDirect(supabase, userRow.id)
               } else {
                 console.log('✅ Subscriber role ensured via email fallback on transaction.completed')
               }
@@ -833,7 +887,7 @@ async function handleTransactionCompleted(supabase: any, data: any) {
               console.error('❌ Error calling reactivate_user_subscription via email fallback:', err)
             }
           } else {
-            console.warn('⚠️ Could not resolve user by email from transaction payload', userLookupError)
+            console.warn('⚠️ Could not resolve user by email from transaction payload')
           }
         }
       }
