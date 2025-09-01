@@ -331,11 +331,13 @@ async function ensureSubscriberRoleDirect(supabase: any, userId: string) {
 
 async function handleSubscriptionCreated(supabase: any, data: any) {
   try {
-    const { subscription_id, customer_id, items, status, next_billed_at } = data
+    const { items, status, next_billed_at } = data
+    const subscriptionIdResolved = data?.subscription_id || data?.id || data?.subscription?.id || data?.subscriptionId
+    const customerIdResolved = data?.customer_id || data?.customer?.id
     
     console.log('🔍 Processing subscription.created webhook:', {
-      subscription_id,
-      customer_id,
+      subscription_id: subscriptionIdResolved,
+      customer_id: customerIdResolved,
       status,
       custom_data: data.custom_data,
       custom_data_keys: data.custom_data ? Object.keys(data.custom_data) : [],
@@ -354,7 +356,7 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
     })
     
     if (!userId) {
-      console.warn('⚠️ No userId in custom data for subscription:', subscription_id)
+      console.warn('⚠️ No userId in custom data for subscription:', subscriptionIdResolved)
       console.warn('⚠️ Full custom_data:', customData)
       console.warn('⚠️ Custom data keys:', Object.keys(customData))
 
@@ -384,8 +386,37 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
           return
         }
       } else {
-        console.error('❌ No userId and no resolvable email in webhook payload for subscription:', subscription_id)
-        return
+        // Try Paddle API based resolution: by subscription id first, then customer id
+        try {
+          let resolvedEmail: string | null = null
+          if (subscriptionIdResolved) {
+            resolvedEmail = await resolveEmailFromSubscriptionId(subscriptionIdResolved)
+          }
+          if (!resolvedEmail && customerIdResolved) {
+            resolvedEmail = await resolveEmailFromCustomerId(customerIdResolved)
+          }
+          if (resolvedEmail) {
+            console.log('🔍 Resolved email via Paddle API for subscription.created:', resolvedEmail)
+            const { data: userRow } = await supabase
+              .from('users')
+              .select('id')
+              .eq('email', resolvedEmail)
+              .maybeSingle()
+            if (userRow?.id) {
+              userId = userRow.id
+              console.log('✅ Resolved user by Paddle API email for subscription.created:', { userId })
+            } else {
+              console.error('❌ No local user found for Paddle email on subscription.created')
+              return
+            }
+          } else {
+            console.error('❌ No userId and no resolvable email (payload or Paddle API) for subscription:', subscriptionIdResolved)
+            return
+          }
+        } catch (apiErr) {
+          console.error('❌ Error during Paddle API email resolution for subscription.created:', apiErr)
+          return
+        }
       }
     }
 
@@ -397,8 +428,8 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
       userId,
       planId,
       billingCycle,
-      subscription_id,
-      customer_id
+      subscription_id: subscriptionIdResolved,
+      customer_id: customerIdResolved
     })
 
     // Activate user subscription using the database function
@@ -406,8 +437,8 @@ async function handleSubscriptionCreated(supabase: any, data: any) {
       p_user_id: userId,
       p_plan_id: planId,
       p_billing_cycle: billingCycle,
-      p_paddle_subscription_id: subscription_id,
-      p_paddle_customer_id: customer_id
+      p_paddle_subscription_id: subscriptionIdResolved,
+      p_paddle_customer_id: customerIdResolved
     })
 
     if (error) {
@@ -666,13 +697,43 @@ async function handlePaymentSucceeded(supabase: any, data: any) {
           .select('*')
           .eq('paddle_customer_id', fallbackCustomerId)
           .maybeSingle()
-        if (!subByCustomer) {
-          console.warn('⚠️ No subscription mapping by customer_id either; skipping role ensure')
-          return
+        if (subByCustomer) {
+          // Use this subscription row for subsequent updates
+          subscription = subByCustomer
         }
-        // Use this subscription row for subsequent updates
-        subscription = subByCustomer
-      } else {
+      }
+
+      // If still no subscription row, try resolving email via Paddle API and ensure role directly
+      if (!subscription) {
+        try {
+          let resolvedEmail: string | null = null
+          if (subscription_id) {
+            resolvedEmail = await resolveEmailFromSubscriptionId(subscription_id)
+          }
+          if (!resolvedEmail && (data?.customer_id || data?.customer?.id)) {
+            const cid = data.customer_id || data.customer.id
+            resolvedEmail = await resolveEmailFromCustomerId(cid)
+          }
+          if (resolvedEmail) {
+            const { data: userRow } = await supabase
+              .from('users')
+              .select('id')
+              .eq('email', resolvedEmail)
+              .maybeSingle()
+            if (userRow?.id) {
+              const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', { p_user_id: userRow.id })
+              if (reactivateError) {
+                console.warn('⚠️ RPC failed after Paddle email resolution, using direct fallback:', reactivateError)
+                await ensureSubscriberRoleDirect(supabase, userRow.id)
+              } else {
+                console.log('✅ Ensured subscriber role via Paddle email resolution (payment_succeeded) for', resolvedEmail)
+              }
+            }
+          }
+        } catch (fallbackErr) {
+          console.error('⚠️ Error during Paddle API email resolution fallback (payment_succeeded):', fallbackErr)
+        }
+        // Continue; we still want to return 200
         return
       }
     }
@@ -888,6 +949,35 @@ async function handleTransactionCompleted(supabase: any, data: any) {
             }
           } else {
             console.warn('⚠️ Could not resolve user by email from transaction payload')
+          }
+        } else {
+          // If no email in payload, try Paddle API email resolution
+          try {
+            let resolvedEmail: string | null = null
+            if (subscription_id) {
+              resolvedEmail = await resolveEmailFromSubscriptionId(subscription_id)
+            }
+            if (!resolvedEmail && customer_id) {
+              resolvedEmail = await resolveEmailFromCustomerId(customer_id)
+            }
+            if (resolvedEmail) {
+              const { data: userRow } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', resolvedEmail)
+                .maybeSingle()
+              if (userRow?.id) {
+                const { error: reactivateError } = await supabase.rpc('reactivate_user_subscription', { p_user_id: userRow.id })
+                if (reactivateError) {
+                  console.warn('⚠️ RPC failed after Paddle API email resolution (transaction.completed); using direct fallback:', reactivateError)
+                  await ensureSubscriberRoleDirect(supabase, userRow.id)
+                } else {
+                  console.log('✅ Ensured subscriber role via Paddle API email resolution on transaction.completed for', resolvedEmail)
+                }
+              }
+            }
+          } catch (apiErr) {
+            console.error('⚠️ Error during Paddle API email resolution fallback (transaction.completed):', apiErr)
           }
         }
       }
