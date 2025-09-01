@@ -242,3 +242,4 @@ grant execute on function public.get_user_subscription_status(uuid) to authentic
 
 
 
+

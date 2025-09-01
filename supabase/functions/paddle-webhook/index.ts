@@ -329,6 +329,72 @@ async function ensureSubscriberRoleDirect(supabase: any, userId: string) {
   }
 }
 
+async function upsertSubscriptionRow(supabase: any, userId: string, data: any) {
+  try {
+    const subscriptionId = data?.subscription_id || data?.id || data?.subscription?.id || data?.subscriptionId || null
+    const customerId = data?.customer_id || data?.customer?.id || null
+
+    // Skip if we have neither identifier
+    if (!subscriptionId && !customerId) return
+
+    // Check existence by subscription_id then by customer_id
+    let existing: any = null
+    if (subscriptionId) {
+      const { data: bySub } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('paddle_subscription_id', subscriptionId)
+        .maybeSingle()
+      if (bySub) existing = bySub
+    }
+    if (!existing && customerId) {
+      const { data: byCust } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('paddle_customer_id', customerId)
+        .maybeSingle()
+      if (byCust) existing = byCust
+    }
+
+    if (existing) return
+
+    // Infer billing cycle and period
+    let billingCycle = 'monthly'
+    const interval = data?.items?.[0]?.price?.billing_cycle?.interval || data?.billing_cycle?.interval
+    if (interval === 'year' || interval === 'annual' || interval === 'yearly') {
+      billingCycle = 'yearly'
+    }
+
+    const periodStart = data?.billing_period?.starts_at || new Date().toISOString()
+    const periodEnd = data?.billing_period?.ends_at || (billingCycle === 'monthly'
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString())
+
+    const insertPayload: Record<string, any> = {
+      user_id: userId,
+      plan_id: 'pro',
+      status: 'active',
+      billing_cycle: billingCycle,
+      current_period_start: periodStart,
+      current_period_end: periodEnd,
+    }
+    if (subscriptionId) insertPayload.paddle_subscription_id = subscriptionId
+    if (customerId) insertPayload.paddle_customer_id = customerId
+
+    const { error: insErr } = await supabase
+      .from('user_subscriptions')
+      .insert(insertPayload)
+
+    if (insErr) {
+      console.warn('⚠️ Failed to upsert subscription row (may already exist):', insErr)
+    } else {
+      console.log('✅ Upserted subscription row for user:', { userId, subscriptionId, customerId })
+    }
+  } catch (e) {
+    console.error('⚠️ Error upserting subscription row:', e)
+  }
+}
+
 async function handleSubscriptionCreated(supabase: any, data: any) {
   try {
     const { items, status, next_billed_at } = data
@@ -974,6 +1040,8 @@ async function handleTransactionCompleted(supabase: any, data: any) {
                 } else {
                   console.log('✅ Ensured subscriber role via Paddle API email resolution on transaction.completed for', resolvedEmail)
                 }
+                // Ensure we have a subscription mapping row for future lookups
+                await upsertSubscriptionRow(supabase, userRow.id, data)
               }
             }
           } catch (apiErr) {
