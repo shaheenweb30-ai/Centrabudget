@@ -749,8 +749,6 @@ async function handleTransactionCompleted(supabase: any, data: any) {
           console.log('🔍 Attempting to resolve user by email from transaction payload:', email)
           const { data: userRow, error: userLookupError } = await supabase
             .from('auth.users')
-          const { data: userRow, error: userLookupError } = await supabase
-            .from('auth.users')
             .select('id, email')
             .eq('email', email)
             .single()
