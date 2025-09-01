@@ -30,13 +30,21 @@ serve(async (req) => {
     // Get environment variables (support fallbacks for hosted secrets)
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('PROJECT_URL') || ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SERVICE_ROLE_KEY') || ''
-    const paddleWebhookSecret = Deno.env.get('PADDLE_WEBHOOK_SECRET') || ''
+    const paddleWebhookSecretPrimary = Deno.env.get('PADDLE_WEBHOOK_SECRET') || ''
+    const paddleWebhookSecretAlt = Deno.env.get('PADDLE_WEBHOOK_SECRET_ALT') || ''
+    const paddleWebhookSecretsCsv = Deno.env.get('PADDLE_WEBHOOK_SECRETS') || ''
+    const sanitize = (s: string) => s.trim().replace(/^['"]|['"]$/g, '')
+    const paddleSecrets = [
+      paddleWebhookSecretPrimary,
+      paddleWebhookSecretAlt,
+      ...paddleWebhookSecretsCsv.split(',')
+    ].map((s) => sanitize(s)).filter(Boolean)
 
-    if (!supabaseUrl || !supabaseServiceKey || !paddleWebhookSecret) {
+    if (!supabaseUrl || !supabaseServiceKey || paddleSecrets.length === 0) {
       console.error('❌ Missing required environment variables', {
         hasSupabaseUrl: !!supabaseUrl,
         hasServiceRoleKey: !!supabaseServiceKey,
-        hasWebhookSecret: !!paddleWebhookSecret
+        webhookSecretCount: paddleSecrets.length
       })
       return new Response(
         JSON.stringify({ error: 'Server misconfigured' }),
@@ -76,10 +84,10 @@ serve(async (req) => {
 
     // Verify webhook signature
     const signatureHeader = req.headers.get('paddle-signature') || req.headers.get('Paddle-Signature') || ''
-    if (!signatureHeader || !paddleWebhookSecret) {
+    if (!signatureHeader || paddleSecrets.length === 0) {
       console.error('❌ Missing webhook signature or secret')
       console.error('Signature:', signatureHeader ? 'Present' : 'Missing')
-      console.error('Secret:', paddleWebhookSecret ? 'Set' : 'Missing')
+      console.error('Secrets count:', paddleSecrets.length)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -119,22 +127,34 @@ serve(async (req) => {
 
     const signedData = `${ts}:${payload}`
 
-    const expectedSignature = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(paddleWebhookSecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    ).then(key => crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedData)))
-    .then(signature => Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-    )
+    async function computeHmacHex(secret: string, data: string): Promise<string> {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      )
+      const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data))
+      return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    }
 
-    if (receivedH1 !== expectedSignature) {
+    let verified = false
+    let firstExpected = ''
+    for (let i = 0; i < paddleSecrets.length; i++) {
+      const exp = await computeHmacHex(paddleSecrets[i], signedData)
+      if (i === 0) firstExpected = exp
+      if (receivedH1.toLowerCase() === exp.toLowerCase()) {
+        verified = true
+        break
+      }
+    }
+
+    if (!verified) {
       console.error('❌ Invalid webhook signature')
-      console.error('Expected:', expectedSignature)
+      console.error('Expected (secret #1):', firstExpected)
       console.error('Received:', receivedH1)
+      console.error('Tried secrets:', paddleSecrets.length)
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
         { 

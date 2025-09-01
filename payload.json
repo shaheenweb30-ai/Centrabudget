@@ -1,0 +1,1 @@
+{"event_type":"subscription.created","data":{"subscription_id":"sub_test_123","customer_id":"cus_test_456","items":[{"price_id":"pri_01k3p1bn3kraq956cze7sm83ch"}],"status":"active","custom_data":{"userId":"00000000-0000-0000-0000-000000000000"}}}
