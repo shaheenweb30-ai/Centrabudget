@@ -1,26 +1,27 @@
--- Fix transactions table foreign key constraint
--- Drop the existing foreign key constraint if it exists
+-- Fix transactions table structure
+-- First, add category_id column if it doesn't exist
 DO $$ 
 BEGIN
-    -- Check if the constraint exists and drop it
-    IF EXISTS (
-        SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'transactions_category_id_fkey' 
-        AND table_name = 'transactions'
+    -- Check if category_id column exists
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'transactions' 
+        AND column_name = 'category_id'
     ) THEN
-        ALTER TABLE transactions DROP CONSTRAINT transactions_category_id_fkey;
+        -- Add category_id column
+        ALTER TABLE transactions ADD COLUMN category_id UUID REFERENCES categories(id) ON DELETE CASCADE;
+        
+        -- Migrate existing category data to category_id
+        UPDATE transactions 
+        SET category_id = (
+            SELECT id FROM categories 
+            WHERE categories.name = transactions.category 
+            AND categories.user_id = transactions.user_id
+            LIMIT 1
+        );
     END IF;
 END $$;
 
--- Add the correct foreign key constraint to reference categories table
-ALTER TABLE transactions 
-ADD CONSTRAINT transactions_category_id_fkey 
-FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE;
-
--- Update the index to use category_id instead of category
+-- Update the index to use category_id
 DROP INDEX IF EXISTS idx_transactions_category;
-CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
-
--- Update the date index to use transaction_date
-DROP INDEX IF EXISTS idx_transactions_date;
-CREATE INDEX IF NOT EXISTS idx_transactions_transaction_date ON transactions(transaction_date); 
+CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id); 

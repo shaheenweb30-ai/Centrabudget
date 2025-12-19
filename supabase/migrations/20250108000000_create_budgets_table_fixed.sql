@@ -12,7 +12,16 @@ CREATE TABLE IF NOT EXISTS public.budgets (
 -- Enable Row Level Security
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 
--- Create policies
+-- Create policies (with IF NOT EXISTS check)
+DO $$ 
+BEGIN
+    -- Drop existing policies if they exist
+    DROP POLICY IF EXISTS "Users can view their own budgets" ON public.budgets;
+    DROP POLICY IF EXISTS "Users can insert their own budgets" ON public.budgets;
+    DROP POLICY IF EXISTS "Users can update their own budgets" ON public.budgets;
+    DROP POLICY IF EXISTS "Users can delete their own budgets" ON public.budgets;
+END $$;
+
 CREATE POLICY "Users can view their own budgets" ON public.budgets
     FOR SELECT USING (auth.uid() = user_id);
 
